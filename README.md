@@ -97,7 +97,7 @@ public class TestAddressDTOBuilder
 }
 ```
 
-Using `//[RequireNamedArgs]` in the above code sample is important as it allows only client code which calls `BuildWith` with named arguments.
+Using `//[RequireNamedArgs]` in the above code sample is important as it makes sure a call to `BuildWith` uses named arguments.
 
 So something like this is OK:
 ```csharp
