@@ -1,6 +1,7 @@
 ﻿module RequireNamedArgs.ParameterInfo
 
 open System
+open System.Collections.Immutable
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp.Syntax
 open RequireNamedArgs.CSharpAdapters
@@ -9,6 +10,14 @@ open RequireNamedArgs.MaybeBuilder
 type ParameterInfo = {
     MethodOrProperty : ISymbol;
     Parameter : IParameterSymbol }
+
+type ISymbol with
+    member symbol.GetParameters() =
+        match symbol with
+        | :? IMethodSymbol as s   -> s.Parameters
+        | :? IPropertySymbol as s -> s.Parameters
+        | _                       -> ImmutableArray<IParameterSymbol>.Empty
+        |> Seq.toList
 
 /// <summary>
 /// To be able to convert positional arguments to named we need to find
