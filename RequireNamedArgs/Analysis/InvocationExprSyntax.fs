@@ -71,9 +71,18 @@ let getArgsWhichShouldBeNamed
     let NoArgsShouldBeNamed = []
     let argSyntaxes = invocationExprSyntax.ArgumentList.Arguments
     maybe {
-        if Seq.isEmpty argSyntaxes then return NoArgsShouldBeNamed else
-        if not (namedArgsRequired sema invocationExprSyntax) then return NoArgsShouldBeNamed else
+        if Seq.isEmpty argSyntaxes 
+        then return NoArgsShouldBeNamed 
+        else
+
+        if not (namedArgsRequired sema invocationExprSyntax) 
+        then return NoArgsShouldBeNamed 
+        else
+
         let! { Parameter = lastParam } = argSyntaxes |> Seq.last |> sema.GetParameterInfo
-        if lastParam.IsParams then return NoArgsShouldBeNamed else
+        if lastParam.IsParams 
+        then return NoArgsShouldBeNamed 
+        else
+
         return! getArgAndParams sema argSyntaxes |>> List.filter (fun it -> isNull it.Argument.NameColon)
     }

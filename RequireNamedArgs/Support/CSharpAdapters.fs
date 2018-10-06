@@ -5,8 +5,4 @@ type Option<'a> with
         match baseObj with 
         | :? 'Derived as derivedObj -> Some derivedObj
         | _                         -> None
-    static member ofList list =
-        match list with
-        | [] -> None
-        | _  -> Some list
 

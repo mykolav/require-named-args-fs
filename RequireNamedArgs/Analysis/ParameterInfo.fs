@@ -28,8 +28,14 @@ type SemanticModel with
         let argList = argument.Parent :?> ArgumentListSyntax
         let exprSyntax = argList.Parent  :?> ExpressionSyntax
         let methodOrProperty = sema.GetSymbolInfo(exprSyntax).Symbol
-        let! parameters = methodOrProperty.GetParameters() |> Option.ofList
-        if isNull argument.NameColon then
+
+        let parameters = methodOrProperty.GetParameters()
+        if parameters.IsEmpty
+        then return! None
+        else
+
+        if isNull argument.NameColon 
+        then
             // A positional argument.
             match argList.Arguments.IndexOf(argument) with
             | index when index >= 0 && index < parameters.Length -> 

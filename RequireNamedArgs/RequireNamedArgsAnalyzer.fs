@@ -2,7 +2,6 @@ namespace RequireNamedArgs.Analyzer
 
 open System
 open System.Collections.Immutable
-open System.Text
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
 open Microsoft.CodeAnalysis.CSharp.Syntax
@@ -21,14 +20,14 @@ type public RequireNamedArgsAnalyzer() =
     static let description = "Methods marked with `//[RequireNamedArgs]` must be invoked with named arguments."
     static let descriptor = 
         DiagnosticDescriptor(
-            diagnosticId,
-            "[RequireNamedArgs] method invocation with positional arguments." (*title*),
-            messageFormat,
-            "Naming" (*category*),
-            DiagnosticSeverity.Error (*defaultSeverity*), 
-            true (*isEnabeledByDefault*), 
-            description,
-            null (*helpLinkUri*))
+            id=diagnosticId,
+            title="[RequireNamedArgs] method invocation with positional arguments.",
+            messageFormat=messageFormat,
+            category="Naming",
+            defaultSeverity=DiagnosticSeverity.Error, 
+            isEnabledByDefault=true, 
+            description=description,
+            helpLinkUri=null)
 
     static member DiagnosticId = diagnosticId
     static member MessageFormat = messageFormat
@@ -59,28 +58,25 @@ type public RequireNamedArgsAnalyzer() =
 
     member private this.Analyze(context: SyntaxNodeAnalysisContext) =
         maybe {
-            let! sema = context.SemanticModel |> Option.ofObj
             let! invocationExprSyntax = context.Node |> Option.ofType<InvocationExpressionSyntax>
-            let! methodSymbol = 
-                sema.GetSymbolInfo(invocationExprSyntax).Symbol 
-                |> Option.ofType<IMethodSymbol>
-                >>= this.filterSupported
+            let! methodSymbol = context.SemanticModel.GetSymbolInfo(invocationExprSyntax).Symbol 
+                                |> Option.ofType<IMethodSymbol>
+            let! methodSymbol = methodSymbol |> this.filterSupported
             // We got a supported kind of method.
             // Delegate heavy-lifting to the call below.
-            let! argsWhichShouldBeNamed = getArgsWhichShouldBeNamed sema invocationExprSyntax
+            let! argsWhichShouldBeNamed = getArgsWhichShouldBeNamed context.SemanticModel 
+                                                                    invocationExprSyntax
 
             // We inspected the arguments of invocation expression.
-            if argsWhichShouldBeNamed |> Seq.any then
-                // There are arguments that should be named -- emit the diagnostic.
-                return context.ReportDiagnostic(
-                    Diagnostic.Create(
-                        descriptor, 
-                        invocationExprSyntax.GetLocation(),
-                        // messageArgs
-                        methodSymbol.Name, 
-                        this.formatDiagMessage argsWhichShouldBeNamed
-                    )
-                )
+            if argsWhichShouldBeNamed |> Seq.any 
+            then // There are arguments that should be named -- emit the diagnostic.
+                 return context.ReportDiagnostic(
+                     Diagnostic.Create(
+                         descriptor, 
+                         invocationExprSyntax.GetLocation(),
+                         // messageArgs
+                         methodSymbol.Name, 
+                         this.formatDiagMessage argsWhichShouldBeNamed))
             // If none of them should be named or, maybe, they already are named,
             // we have nothing more to do.
             else return ()
