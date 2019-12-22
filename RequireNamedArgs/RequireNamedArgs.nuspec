@@ -24,6 +24,7 @@
   <files>
     <file src="bin\Release\netstandard2.0\RequireNamedArgs.dll" target="analyzers\dotnet\cs\" />
     <file src="bin\Release\netstandard2.0\RequireNamedArgs.pdb" target="analyzers\dotnet\cs\" />
+    <file src="..\dependencies\FSharp.Core.dll" target="analyzers\dotnet\cs\" />
     <file src="tools\*.ps1" target="tools\" />
   </files>
 
