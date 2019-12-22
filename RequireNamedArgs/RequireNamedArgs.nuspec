@@ -6,9 +6,9 @@
     <authors>Mykola Musiienko</authors>
     <owners>Mykola Musiienko</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <licenseUrl>https://github.com/mykolav/require-named-args-fs/blob/master/LICENSE</licenseUrl>
+    <license type="file">LICENSE</license>
     <projectUrl>https://github.com/mykolav/require-named-args-fs</projectUrl>
-    <iconUrl>https://avatars1.githubusercontent.com/u/14280254</iconUrl>
+    <icon>icon.png</icon>
     <description>"Require named arguments" Roslyn code analyzer and code-fix provider for C#</description>
     <copyright>Copyright © Mykola Musiienko 2019</copyright>
     <tags>roslyn roslyn-analyzer</tags>
@@ -26,6 +26,8 @@
     <file src="bin\Release\netstandard2.0\RequireNamedArgs.pdb" target="analyzers\dotnet\cs\" />
     <file src="..\dependencies\FSharp.Core.dll" target="analyzers\dotnet\cs\" />
     <file src="tools\*.ps1" target="tools\" />
+    <file src="..\LICENS*" target="" />
+    <file src="..\icon.png" target="" />
   </files>
 
 </package>
