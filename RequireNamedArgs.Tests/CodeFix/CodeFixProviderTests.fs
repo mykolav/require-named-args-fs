@@ -16,6 +16,9 @@ module private Expect =
                 {
                     %s
                 }
+                
+                [AttributeUsage(AttributeTargets.Method)]
+                class RequireNamedArgsAttribute : Attribute {}    
             }" source
 
     let toBeFixedAndMatch expectedFixedSnippet originalSnippet =
@@ -38,13 +41,13 @@ let codeFixProviderTests =
         testList "[RequireNamedArgs] method" [
             test "Invocation w/ positional args is fixed to named args" {
                 let originalSnippet = @"
-                    // [RequireNamedArgs]
+                    [RequireNamedArgs]
                     void Gork(string fileName, int line, int column) {}
                     void Bork() { Gork(""Gizmo.cs"", 9000, 1); }
                 "
 
                 let expectedFixedSnippet = @"
-                    // [RequireNamedArgs]
+                    [RequireNamedArgs]
                     void Gork(string fileName, int line, int column) {}
                     void Bork() { Gork(fileName: ""Gizmo.cs"", line: 9000, column: 1); }
                 "
@@ -53,7 +56,7 @@ let codeFixProviderTests =
             } 
             test "Invocation w/ positional args is fixed to named args preserving trivia" {
                 let originalSnippet = @"
-                    // [RequireNamedArgs]
+                    [RequireNamedArgs]
                     void Gork(string fileName, int line, int column) {}
                     void Bork()
                     {
@@ -67,7 +70,7 @@ let codeFixProviderTests =
                 "
 
                 let expectedFixedSnippet = @"
-                    // [RequireNamedArgs]
+                    [RequireNamedArgs]
                     void Gork(string fileName, int line, int column) {}
                     void Bork()
                     {
@@ -84,13 +87,13 @@ let codeFixProviderTests =
             } 
             test "Invocation w/ 1st arg named and 2 positional args is fixed to named args" {
                 let originalSnippet = @"
-                    // [RequireNamedArgs]
+                    [RequireNamedArgs]
                     void Gork(string foo, string bar, string baz) {}
                     void Bork() { Gork(foo: ""pupper"", ""doggo"", ""woofer""); }
                 "
 
                 let expectedFixedSnippet = @"
-                    // [RequireNamedArgs]
+                    [RequireNamedArgs]
                     void Gork(string foo, string bar, string baz) {}
                     void Bork() { Gork(foo: ""pupper"", bar: ""doggo"", baz: ""woofer""); }
                 "
@@ -99,13 +102,13 @@ let codeFixProviderTests =
             }
             test "Invocation w/ 2nd arg named and 2 positional args is fixed to named args" {
                 let originalSnippet = @"
-                    // [RequireNamedArgs]
+                    [RequireNamedArgs]
                     void Gork(string foo, string bar, string baz) {}
                     void Bork() { Gork(""pupper"", bar: ""doggo"", ""woofer""); }
                 "
 
                 let expectedFixedSnippet = @"
-                    // [RequireNamedArgs]
+                    [RequireNamedArgs]
                     void Gork(string foo, string bar, string baz) {}
                     void Bork() { Gork(foo: ""pupper"", bar: ""doggo"", baz: ""woofer""); }
                 "
@@ -114,13 +117,13 @@ let codeFixProviderTests =
             }
             test "Invocation w/ 3rd arg named and 2 positional args is fixed to named args" {
                 let originalSnippet = @"
-                    // [RequireNamedArgs]
+                    [RequireNamedArgs]
                     void Gork(string foo, string bar, string baz) {}
                     void Bork() { Gork(""pupper"", ""doggo"", baz: ""woofer""); }
                 "
 
                 let expectedFixedSnippet = @"
-                    // [RequireNamedArgs]
+                    [RequireNamedArgs]
                     void Gork(string foo, string bar, string baz) {}
                     void Bork() { Gork(foo: ""pupper"", bar: ""doggo"", baz: ""woofer""); }
                 "
@@ -130,13 +133,13 @@ let codeFixProviderTests =
         testList "static [RequireNamedArgs] method" [
             test "Invocation w/ positional args is fixed to named args" {
                 let originalSnippet = @"
-                    // [RequireNamedArgs]
+                    [RequireNamedArgs]
                     static void Gork(string fileName, int line, int column) {}
                     void Bork() { Gork(""Gizmo.cs"", 9000, 1); }
                 "
 
                 let expectedFixedSnippet = @"
-                    // [RequireNamedArgs]
+                    [RequireNamedArgs]
                     static void Gork(string fileName, int line, int column) {}
                     void Bork() { Gork(fileName: ""Gizmo.cs"", line: 9000, column: 1); }
                 "
@@ -146,13 +149,13 @@ let codeFixProviderTests =
         testList "private static [RequireNamedArgs] method" [
             test "Invocation w/ positional args is fixed to named args" {
                 let originalSnippet = @"
-                    // [RequireNamedArgs]
+                    [RequireNamedArgs]
                     private static void Gork(string fileName, int line, int column) {}
                     void Bork() { Gork(""Gizmo.cs"", 9000, 1); }
                 "
 
                 let expectedFixedSnippet = @"
-                    // [RequireNamedArgs]
+                    [RequireNamedArgs]
                     private static void Gork(string fileName, int line, int column) {}
                     void Bork() { Gork(fileName: ""Gizmo.cs"", line: 9000, column: 1); }
                 "

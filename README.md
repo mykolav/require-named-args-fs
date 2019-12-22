@@ -1,7 +1,7 @@
 # Require a method to be invoked with named arguments
 
 ## Motivation
-### 1. There seems to be a certain level of intereset in having a way to [force named arguments in C#](https://stackoverflow.com/questions/11300645/forcing-named-arguments-in-c-sharp)
+### 1. There seems to be a certain level of interest in having a way to [force named arguments in C#](https://stackoverflow.com/questions/11300645/forcing-named-arguments-in-c-sharp)
 
 ### 2. Say, you're using [a builder to create test data to improve your tests](https://ardalis.com/improve-tests-with-the-builder-pattern-for-test-data)
 
@@ -65,7 +65,7 @@ And a simplified version:
 ```csharp
 public class TestAddressDTOBuilder
 {
-    //[RequireNamedArgs]
+    [RequireNamedArgs]
     public AddressDTO BuildWith(
         string line1 = null,
         string line2 = null,
@@ -97,7 +97,7 @@ public class TestAddressDTOBuilder
 }
 ```
 
-Using `//[RequireNamedArgs]` in the above code sample is important as it makes sure a call to `BuildWith` uses named arguments.
+Using the `[RequireNamedArgs]` attribute in the above code sample is important as it makes sure a call to `BuildWith` uses named arguments.
 
 So something like this is OK:
 ```csharp
@@ -128,12 +128,17 @@ This will download all the binaries, and add necessary analyzer references to yo
 ## How to use it?
 
 1. Install the nuget package.
-2. In the project where you installed the package add the `//[RequireNamedArgs]` comment   
-   above a method that should only be invoked with named arguments.
+2. Introduce `RequireNamedArgsAttribute` attribute to your solution.  
+   I. e., create your own  
+   ```csharp
+   [AttributeUsage(AttributeTargets.Method)]
+   public class RequireNamedArgsAttribute : Attribute { }
+   ```
+3. Mark methods which should only be invoked with named arguments with a `[RequireNamedArgs]` attribute.   
 
 For example:
 ```csharp
-//[RequireNamedArgs]
+[RequireNamedArgs]
 public static void TellPowerLevel(string name, int powerLevel) {}
 
 // Elsewhere in your code:
@@ -146,8 +151,8 @@ TellPowerLevel(name: "Goku", powerLevel: 9001);
 
 1. This analyzer looks at an invocation expression (e.g., a method call).
 2. It then finds the method's definition.
-3. If the definition is prefixed with a comment of the form `//[RequireNamedArgs]`,  
-   the analyzer requires to provide names for the invocation's arguments.
+3. If the definition is marked with a `[RequireNamedArgs]` attribute,  
+   the analyzer requires to every caller to provide names for the invocation's arguments.
 4. If the last parameter is `params`, the analyzer  
    doesn't emit the diagnostic, as we cannot use named arguments in this case.
 

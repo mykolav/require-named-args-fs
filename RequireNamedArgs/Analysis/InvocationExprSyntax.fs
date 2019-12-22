@@ -21,6 +21,7 @@ open Microsoft.CodeAnalysis.CSharp.Syntax
 open RequireNamedArgs.MaybeBuilder
 open RequireNamedArgs.ArgumentAndParameter
 open RequireNamedArgs.ParameterInfo
+open RequireNamedArgs.CSharpAdapters
 
 let private getArgAndParams
     (sema: SemanticModel) 
@@ -37,24 +38,12 @@ let private getArgAndParams
 
 let private namedArgsRequired (sema: SemanticModel) 
                               (invocationExprSyntax: InvocationExpressionSyntax) =
-    let reWhiteSpace = Regex(@"\s+")
-
-    let isRequireNamedArgsTrivia (trivia: SyntaxTrivia) =
-        let RequireNamedArgs = "[RequireNamedArgs]";
-        if    trivia.IsKind(CSharp.SyntaxKind.SingleLineCommentTrivia)
-           || trivia.IsKind(CSharp.SyntaxKind.MultiLineCommentTrivia) then
-                let condensed = reWhiteSpace.Replace(trivia.ToString(), "")
-                condensed = "//" + RequireNamedArgs || condensed = "/*" + RequireNamedArgs + "*/"
-        else false
-
-    let isMarkedRequireNamedArgs (nodeRef: SyntaxReference) = 
-        let node = nodeRef.GetSyntax()
-        node.HasLeadingTrivia && 
-        node.GetLeadingTrivia() |> Seq.exists isRequireNamedArgsTrivia
-
-    let methodOrProperty = sema.GetSymbolInfo(invocationExprSyntax).Symbol
-    methodOrProperty.DeclaringSyntaxReferences |> Seq.exists isMarkedRequireNamedArgs
-
+    let methodSymbolOpt = sema.GetSymbolInfo(invocationExprSyntax).Symbol |> Option.ofType<IMethodSymbol>
+    match methodSymbolOpt with
+    | None -> false
+    | Some methodSymbol ->
+           (methodSymbol.GetAttributes()
+            |> Seq.exists (fun attrData -> attrData.AttributeClass.Name = "RequireNamedArgsAttribute"))
 
 /// <summary>
 /// This method analyzes the supplied <paramref name="invocationExprSyntax" />

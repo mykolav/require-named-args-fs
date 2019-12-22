@@ -9,13 +9,28 @@ module private Expect =
     open Support.DiagnosticProvider
     open Support.DocumentFactory
 
-    let toBeEmittedFrom code expectedDiags =
+    let formatSource (source: string) =
+        sprintf
+            "namespace Frobnitz
+            {
+                class Wombat
+                {
+                    %s
+                }
+                
+                [AttributeUsage(AttributeTargets.Method)]
+                class RequireNamedArgsAttribute : Attribute {}    
+            }" source
+    
+
+    let toBeEmittedFrom snippet expectedDiags =
+        let code = formatSource snippet
         let analyzer = RequireNamedArgsAnalyzer()
         expectedDiags 
         |> Expect.diagnosticsToMatch analyzer 
                                      (analyzer.GetSortedDiagnostics(CSharp, [code]))
 
-    let emptyDiagnostics code = [||] |> toBeEmittedFrom code
+    let emptyDiagnostics snippet = [||] |> toBeEmittedFrom (formatSource snippet)
 
 // TODO: Consider the following use-cases:
 // TODO:   Delegate. class C { void M(System.Action<int, int> f) => f(1, 2);
@@ -32,103 +47,82 @@ let analyzerTests =
         }
         test "Method w/o params does not trigger diagnostics" {
             Expect.emptyDiagnostics @"
-                namespace Frobnitz
-                {
-                    class Wombat
-                    {
-                        void Gork() {}
-                        void Bork() { Gork(); } 
-                    } } 
+                void Gork() {}
+                void Bork() { Gork(); } 
             "
         }
         test "Method w/o params w/ [RequireNamedArgs] does not trigger diagnostics" {
             Expect.emptyDiagnostics @"
-                namespace Frobnitz
-                {
-                    class Wombat
-                    {
-                        //[RequireNamedArgs]
-                        void Gork() {}
-                        void Bork() { Gork(); } 
-                    } } 
+                [RequireNamedArgs]
+                void Gork() {}
+                void Bork() { Gork(); } 
             "
         }
         test "Method w/o [RequireNamedArgs] does not trigger diagnostics" {
             Expect.emptyDiagnostics @"
-                namespace Frobnitz
+                class Wombat
                 {
-                    class Wombat
-                    {
-                        class Wombat
-                        {
-                            void TellPowerLevel(string name, int powerLevel) {}
-                            void Bork() { TellPowerLevel(name: ""Goku"", powerLevel: 9001); }
-                        } } 
+                    void TellPowerLevel(string name, int powerLevel) {}
+                    void Bork() { TellPowerLevel(name: ""Goku"", powerLevel: 9001); }
+                } 
             "
         }
         test "Method w/ [RequireNamedArgs] invoked w/ named args does not trigger diagnostics" {
             Expect.emptyDiagnostics @"
-                namespace Frobnitz
-                {
-                    class Wombat
-                    {
-                        //[RequireNamedArgs]
-                        void TellPowerLevel(string name, int powerLevel) {}
-                        void Bork() { TellPowerLevel(name: ""Goku"", powerLevel: 9001); }
-                    } } 
+                [RequireNamedArgs]
+                void TellPowerLevel(string name, int powerLevel) {}
+                void Bork() { TellPowerLevel(name: ""Goku"", powerLevel: 9001); }
             "
         }
         test "Method w/ [RequireNamedArgs] invoked w/ positional args triggers diagnostic" {
             let testCodeSnippet = @"
-                namespace Frobnitz
-                {
-                    class Wombat
-                    {
-                        //[RequireNamedArgs]
-                        void TellPowerLevel(string name, int powerLevel) {}
-                        void Bork() { TellPowerLevel(""Goku"", 9001); }
-                    } } 
+                [RequireNamedArgs]
+                void TellPowerLevel(string name, int powerLevel) {}
+                void Bork() { TellPowerLevel(""Goku"", 9001); }
             "
 
             let expectedDiag = RequireNamedArgsDiagResult.Create(invokedMethod="TellPowerLevel",
                                                              paramNamesByType=[[ "line"; "column" ]],
-                                                             fileName="Test0.cs", line=8u, column=39u)
+                                                             fileName="Test0.cs", line=8u, column=31u)
+
+            [|expectedDiag|] |> Expect.toBeEmittedFrom testCodeSnippet
+        }
+        test "Method w/ [RequireNamedArgs] attribute invoked w/ positional args triggers diagnostic" {
+            let testCodeSnippet = @"
+                [RequireNamedArgs]
+                void TellPowerLevel(string name, int powerLevel) {}
+                void Bork() { TellPowerLevel(""Goku"", 9001); }
+            "
+
+            let expectedDiag = RequireNamedArgsDiagResult.Create(invokedMethod="TellPowerLevel",
+                                                             paramNamesByType=[[ "line"; "column" ]],
+                                                             fileName="Test0.cs", line=8u, column=31u)
 
             [|expectedDiag|] |> Expect.toBeEmittedFrom testCodeSnippet
         }
         test "Static method w/ [RequireNamedArgs] invoked w/ positional args triggers diagnostic" {
             let testCodeSnippet = @"
-                namespace Frobnitz
-                {
-                    class Wombat
-                    {
-                        //[RequireNamedArgs]
-                        static void TellPowerLevel(string name, int powerLevel) {}
-                        void Bork() { TellPowerLevel(""Goku"", 9001); }
-                    } } 
+                [RequireNamedArgs]
+                static void TellPowerLevel(string name, int powerLevel) {}
+                void Bork() { TellPowerLevel(""Goku"", 9001); }
             "
 
             let expectedDiag = RequireNamedArgsDiagResult.Create(invokedMethod="TellPowerLevel",
                                                              paramNamesByType=[[ "line"; "column" ]],
-                                                             fileName="Test0.cs", line=8u, column=39u)
+                                                             fileName="Test0.cs", line=8u, column=31u)
 
             [|expectedDiag|] |> Expect.toBeEmittedFrom testCodeSnippet
         }
         test "Private static method w/ [RequireNamedArgs] invoked w/ positional args triggers diagnostic" {
             let testCodeSnippet = @"
-                namespace Frobnitz
-                {
-                    class Wombat
-                    {
-                        //[RequireNamedArgs]
-                        private static void TellPowerLevel(string name, int powerLevel) {}
-                        void Bork() { TellPowerLevel(""Goku"", 9001); }
-                    } } 
+                [RequireNamedArgs]
+                private static void TellPowerLevel(string name, int powerLevel) {}
+                void Bork() { TellPowerLevel(""Goku"", 9001); }
             "
 
             let expectedDiag = RequireNamedArgsDiagResult.Create(invokedMethod="TellPowerLevel",
                                                              paramNamesByType=[[ "line"; "column" ]],
-                                                             fileName="Test0.cs", line=8u, column=39u)
+                                                             fileName="Test0.cs", line=8u, column=31u)
 
             [|expectedDiag|] |> Expect.toBeEmittedFrom testCodeSnippet
         } ]

@@ -17,13 +17,13 @@ type public RequireNamedArgsAnalyzer() =
 
     static let diagnosticId = "RequireNamedArgs"
     static let messageFormat = "A [RequireNamedArgs] method '{0}' must be invoked with named arguments"
-    static let description = "Methods marked with `//[RequireNamedArgs]` must be invoked with named arguments."
+    static let description = "Methods marked with `[RequireNamedArgs]` must be invoked with named arguments."
     static let descriptor = 
         DiagnosticDescriptor(
             id=diagnosticId,
             title="[RequireNamedArgs] method invocation with positional arguments.",
             messageFormat=messageFormat,
-            category="Naming",
+            category="Code style",
             defaultSeverity=DiagnosticSeverity.Error, 
             isEnabledByDefault=true, 
             description=description,

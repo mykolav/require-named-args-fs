@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>RequireNamedArgs</id>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
     <authors>Mykola Musiienko</authors>
     <owners>Mykola Musiienko</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
@@ -10,10 +10,10 @@
     <projectUrl>https://github.com/mykolav/require-named-args-fs</projectUrl>
     <iconUrl>https://avatars1.githubusercontent.com/u/14280254</iconUrl>
     <description>"Require named arguments" Roslyn code analyzer and code-fix provider for C#</description>
-    <copyright>Copyright © Mykola Musiienko 2018</copyright>
+    <copyright>Copyright © Mykola Musiienko 2019</copyright>
     <tags>roslyn roslyn-analyzer</tags>
     <repository url="https://github.com/mykolav/require-named-args-fs" />
-    <releaseNotes>Initial release</releaseNotes>  
+    <releaseNotes>Look for method definitions marked with a `[RequireNamedArgs]` attribute instead of a special comment</releaseNotes>  
 
   <dependencies>
     <group>
