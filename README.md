@@ -103,14 +103,14 @@ So something like this is OK:
 ```csharp
 var testAddressDtoBuilder = new TestAddressDTOBuilder();
 // some code skipped...
-var addresDto = testAddressDtoBuilder.BuildWith(line3: "Suite 500", state: "WA");
+var addressDto = testAddressDtoBuilder.BuildWith(line3: "Suite 500", state: "WA");
 ```
 
 But the analyzer will not allow the code sample below to compile:
 ```csharp
 var testAddressDtoBuilder = new TestAddressDTOBuilder();
 // some code skipped...
-var addresDto = testAddressDtoBuilder.BuildWith("54321 Another test street", "9th Floor");
+var addressDto = testAddressDtoBuilder.BuildWith("54321 Another test street", "9th Floor");
 
 ```
 
@@ -152,9 +152,9 @@ TellPowerLevel(name: "Goku", powerLevel: 9001);
 1. This analyzer looks at an invocation expression (e.g., a method call).
 2. It then finds the method's definition.
 3. If the definition is marked with a `[RequireNamedArgs]` attribute,  
-   the analyzer requires to every caller to provide names for the invocation's arguments.
+   the analyzer requires every caller to provide names for the invocation's arguments.
 4. If the last parameter is `params`, the analyzer  
-   doesn't emit the diagnostic, as we cannot use named arguments in this case.
+   doesn't emit the diagnostic, as C# doesn't allow named arguments in this case.
 
 ![The RequireNamedArgs analyzer in action](./require-named-args-demo.gif)
 
