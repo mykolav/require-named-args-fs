@@ -4,6 +4,7 @@ open System.Linq
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
 open Microsoft.CodeAnalysis.Text
+open Microsoft.CodeAnalysis.VisualBasic
 
 let DefaultFilePathPrefix = "Test";
 let CSharpDefaultFileExt = "cs";
@@ -35,9 +36,15 @@ let private mkProject(sources: seq<string>, lang: Langs) =
 
     let projId = ProjectId.CreateNewId(debugName=TestProjectName)
 
+    let parseOptions =
+        if lang = Langs.CSharp
+        then CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.CSharp7_2) :> ParseOptions
+        else VisualBasicParseOptions.Default :> ParseOptions
+            
     let solution = (new AdhocWorkspace())
                         .CurrentSolution
                         .AddProject(projId, TestProjectName, TestProjectName, lang.ToString())
+                        .WithProjectParseOptions(projId, parseOptions)
                         .AddMetadataReference(projId, CorlibRef)
                         .AddMetadataReference(projId, SystemCoreRef)
                         .AddMetadataReference(projId, CSharpSymbolsRef)

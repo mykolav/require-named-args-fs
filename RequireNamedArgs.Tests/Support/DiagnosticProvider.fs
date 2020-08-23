@@ -33,14 +33,31 @@ type DiagnosticAnalyzer with
             else documents 
                  |> Seq.exists (fun doc -> doc.GetSyntaxTreeAsync().Result = loc.SourceTree)
 
-        let sortedDiags = documents 
-                       |> Seq.map (fun doc -> doc.Project) 
-                       |> Seq.distinct
-                       |> Seq.map (fun proj -> proj.GetCompilationAsync().Result
-                                                   .WithAnalyzers(ImmutableArray.Create(analyzer)))
-                       |> Seq.collect (fun compilation -> compilation.GetAnalyzerDiagnosticsAsync()
-                                                                     .Result)
-                       |> Seq.filter shouldTake
-                       |> Seq.sortBy (fun diag -> diag.Location.SourceSpan.Start)
-                       |> List.ofSeq
+        let compilations =
+           documents 
+           |> Seq.map (fun doc -> doc.Project) 
+           |> Seq.distinct
+           |> Seq.map (fun proj -> proj.GetCompilationAsync().Result)
+
+        // For details, see https://stackoverflow.com/a/54129600/818321                       
+        let compilationErrors =
+            compilations
+            |> Seq.collect (fun c -> c.GetDiagnostics() |> Seq.where (fun d -> d.Severity = DiagnosticSeverity.Error))
+            |> Seq.sortBy (fun d -> d.Location.SourceSpan.Start)
+            |> List.ofSeq
+            
+        if compilationErrors.Length > 0
+        then
+            compilationErrors
+        else
+                                       
+        let sortedDiags =
+           compilations
+           |> Seq.map (fun compilation -> compilation.WithAnalyzers(ImmutableArray.Create(analyzer)))
+           |> Seq.collect (fun compilation -> compilation.GetAnalyzerDiagnosticsAsync()
+                                                         .Result)
+           |> Seq.filter shouldTake
+           |> Seq.sortBy (fun diag -> diag.Location.SourceSpan.Start)
+           |> List.ofSeq
+           
         sortedDiags

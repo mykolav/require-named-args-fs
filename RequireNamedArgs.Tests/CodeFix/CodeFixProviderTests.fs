@@ -10,7 +10,8 @@ open RequireNamedArgs.Tests.Support.DocumentFactory
 module private Expect =
     let formatSource (source: string) =
         sprintf
-            "namespace Frobnitz
+            "using System;
+            namespace Frobnitz
             {
                 class Wombat
                 {
@@ -18,7 +19,9 @@ module private Expect =
                 }
                 
                 [AttributeUsage(AttributeTargets.Method)]
-                class RequireNamedArgsAttribute : Attribute {}    
+                class RequireNamedArgsAttribute : Attribute {}
+                
+                class Program { static void Main(string[] args) {} }
             }" source
 
     let toBeFixedAndMatch expectedFixedSnippet originalSnippet =
@@ -161,5 +164,5 @@ let codeFixProviderTests =
                 "
 
                 originalSnippet |> Expect.toBeFixedAndMatch expectedFixedSnippet
-            } ]
+            }]
  ]

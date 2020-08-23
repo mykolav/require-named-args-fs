@@ -11,7 +11,7 @@ open RequireNamedArgs.CSharpAdapters
 open RequireNamedArgs.InvocationExprSyntax
 open RequireNamedArgs.MaybeBuilder
 
-[<DiagnosticAnalyzer(Microsoft.CodeAnalysis.LanguageNames.CSharp)>]
+[<DiagnosticAnalyzer(LanguageNames.CSharp)>]
 type public RequireNamedArgsAnalyzer() = 
     inherit DiagnosticAnalyzer()
 
@@ -45,11 +45,12 @@ type public RequireNamedArgsAnalyzer() =
 
     member private this.filterSupported (methodSymbol: IMethodSymbol) = 
         match methodSymbol.MethodKind with
-        // So far we only support analyzing of the three kinds of methods listed below.
-        |     MethodKind.Ordinary
-            | MethodKind.Constructor 
-            | MethodKind.LocalFunction -> Some methodSymbol
-        | _                            -> None
+        // So far we only support analyzing of the four kinds of methods listed below.
+        | MethodKind.Ordinary
+        | MethodKind.Constructor 
+        | MethodKind.LocalFunction
+        | MethodKind.ReducedExtension -> Some methodSymbol 
+        | _                           -> None
 
     member private this.formatDiagMessage argsWhichShouldBeNamed =
         String.Join(
