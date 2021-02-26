@@ -37,8 +37,8 @@ let private getArgAndParams
     Seq.foldBack folder syntaxAndMaybeInfos (Some [])
 
 let private namedArgsRequired (sema: SemanticModel) 
-                              (invocationExprSyntax: InvocationExpressionSyntax) =
-    let methodSymbolOpt = sema.GetSymbolInfo(invocationExprSyntax).Symbol |> Option.ofType<IMethodSymbol>
+                              (exprSyntax: ExpressionSyntax) =
+    let methodSymbolOpt = sema.GetSymbolInfo(exprSyntax).Symbol |> Option.ofType<IMethodSymbol>
     match methodSymbolOpt with
     | None -> false
     | Some methodSymbol ->
@@ -56,15 +56,19 @@ let private namedArgsRequired (sema: SemanticModel)
 /// </returns>
 let getArgsWhichShouldBeNamed 
     (sema: SemanticModel) 
-    (invocationExprSyntax: InvocationExpressionSyntax) =
+    (exprSyntax: ExpressionSyntax) =
     let NoArgsShouldBeNamed = []
-    let argSyntaxes = invocationExprSyntax.ArgumentList.Arguments
     maybe {
+        let argSyntaxes = match exprSyntax with 
+            | :? InvocationExpressionSyntax as i -> i.ArgumentList.Arguments
+            | :? ObjectCreationExpressionSyntax as o -> o.ArgumentList.Arguments
+            | _ -> new SeparatedSyntaxList<ArgumentSyntax>()
+
         if Seq.isEmpty argSyntaxes 
         then return NoArgsShouldBeNamed 
         else
 
-        if not (namedArgsRequired sema invocationExprSyntax) 
+        if not (namedArgsRequired sema exprSyntax) 
         then return NoArgsShouldBeNamed 
         else
 
