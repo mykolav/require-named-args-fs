@@ -12,7 +12,6 @@ open Microsoft.CodeAnalysis.CSharp.Syntax
 open FSharp.Control.Tasks.V2.ContextInsensitive
 open RequireNamedArgs.Analyzer
 open RequireNamedArgs.ParameterInfo
-open RequireNamedArgs.InvocationExprSyntax
 
 [<ExportCodeFixProvider(LanguageNames.CSharp, Name = "RequireNamedArgsCodeFixProvider")>]
 [<Shared>]
@@ -33,7 +32,7 @@ type public RequireNamedArgsCodeFixProvider() =
         let! root = context.Document.GetSyntaxRootAsync(context.CancellationToken)
         let diagnostic = context.Diagnostics |> Seq.head;
         let diagnosticSpan = diagnostic.Location.SourceSpan;
-        let invocationExprSyntax = root.FindNode(diagnosticSpan) :?> InvocationExpressionSyntax;
+        let exprSyntax = root.FindNode(diagnosticSpan) :?> ExpressionSyntax;
 
         // Register a code action that will invoke the fix.
         context.RegisterCodeFix(
@@ -43,7 +42,7 @@ type public RequireNamedArgsCodeFixProvider() =
                     return! this.RequireNamedArgumentsAsync(
                         context.Document, 
                         root,
-                        invocationExprSyntax, 
+                        exprSyntax, 
                         cancellationToken) 
                 }, 
                 equivalenceKey = title),
@@ -53,7 +52,7 @@ type public RequireNamedArgsCodeFixProvider() =
 
     member private this.RequireNamedArgumentsAsync(document: Document,
                                                    root: SyntaxNode,
-                                                   invocationExprSyntax: InvocationExpressionSyntax,
+                                                   exprSyntax: ExpressionSyntax,
                                                    cancellationToken: CancellationToken) = task {
         let! sema = document.GetSemanticModelAsync(cancellationToken)
 
@@ -66,14 +65,17 @@ type public RequireNamedArgsCodeFixProvider() =
         
         // As it's the named args code fix provider, 
         // the analyzer has already checked that it's OK to make these args named.
-        let originalArgList = invocationExprSyntax.ArgumentList
-        let maybeNamedArgSyntaxes = originalArgList.Arguments |> Seq.map maybeNameArg
+        match exprSyntax.GetArgumentList() with
+        | Some originalArgumentList ->
+            let maybeNamedArgSyntaxes = originalArgumentList.Arguments |> Seq.map maybeNameArg
 
-        let newArgumentList = originalArgList.WithArguments(
-                                 SyntaxFactory.SeparatedList(
-                                     maybeNamedArgSyntaxes,
-                                     originalArgList.Arguments.GetSeparators()))
-        // An argument list is an "addressable" syntax element, that we can directly
-        // replace in the document's root.
-        return document.WithSyntaxRoot(root.ReplaceNode(originalArgList, newArgumentList))
+            let newArgumentList = originalArgumentList.WithArguments(
+                                     SyntaxFactory.SeparatedList(
+                                         maybeNamedArgSyntaxes,
+                                         originalArgumentList.Arguments.GetSeparators()))
+            // An argument list is an "addressable" syntax element, that we can directly
+            // replace in the document's root.
+            return document.WithSyntaxRoot(root.ReplaceNode(originalArgumentList, newArgumentList))
+        | None ->
+            return document
     }

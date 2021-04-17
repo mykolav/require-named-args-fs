@@ -46,7 +46,7 @@ let private namedArgsRequired (sema: SemanticModel)
             |> Seq.exists (fun attrData -> attrData.AttributeClass.Name = "RequireNamedArgsAttribute"))
 
 /// <summary>
-/// This method analyzes the supplied <paramref name="invocationExprSyntax" />
+/// This method analyzes the supplied <paramref name="exprSyntax" />
 /// to see if any of the arguments need to be named.
 /// </summary>
 /// <param name="sema">The semantic model is necessary for the analysis</param>
@@ -59,10 +59,7 @@ let getArgsWhichShouldBeNamed
     (exprSyntax: ExpressionSyntax) =
     let NoArgsShouldBeNamed = []
     maybe {
-        let argSyntaxes = match exprSyntax with 
-            | :? InvocationExpressionSyntax as i -> i.ArgumentList.Arguments
-            | :? ObjectCreationExpressionSyntax as o -> o.ArgumentList.Arguments
-            | _ -> new SeparatedSyntaxList<ArgumentSyntax>()
+        let argSyntaxes = exprSyntax.GetArguments()
 
         if Seq.isEmpty argSyntaxes 
         then return NoArgsShouldBeNamed 

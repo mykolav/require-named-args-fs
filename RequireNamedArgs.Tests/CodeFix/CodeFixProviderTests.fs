@@ -7,36 +7,44 @@ open RequireNamedArgs.Tests.Support.CodeFixExpectations
 open RequireNamedArgs.Tests.Support.DocumentFactory
 
 [<RequireQualifiedAccess>]
-module private Expect =
-    let formatSource (source: string) =
+module private Format =
+    let klass (source: string) =
+        sprintf
+            "class Wombat
+            {
+                %s
+            }" source
+
+    let program (source: string) =
         sprintf
             "using System;
             namespace Frobnitz
             {
-                class Wombat
-                {
-                    %s
-                }
+                %s
                 
-                [AttributeUsage(AttributeTargets.Method)]
+                [AttributeUsage(AttributeTargets.Constructor | AttributeTargets.Method)]
                 class RequireNamedArgsAttribute : Attribute {}
                 
                 class Program { static void Main(string[] args) {} }
             }" source
-
-    let toBeFixedAndMatch expectedFixedSnippet originalSnippet =
-        let expectedFixedSource = formatSource expectedFixedSnippet
-        let originalSource = formatSource originalSnippet
+            
+[<RequireQualifiedAccess>]
+module private Expect =
+    let sourceToBeFixedAndMatch expectedFixedSource originalSource=
         Expect.toMatchFixedCode (RequireNamedArgsAnalyzer()) (RequireNamedArgsCodeFixProvider())
                                 CSharp originalSource
                                 None false
                                 expectedFixedSource
 
+    let toBeFixedAndMatch expectedFixedSnippet originalSnippet =
+        let expectedFixedSource = Format.program (Format.klass expectedFixedSnippet)
+        let originalSource = Format.program (Format.klass originalSnippet)
+        sourceToBeFixedAndMatch expectedFixedSource originalSource        
+
 // TODO: Delegate. class C { void M(System.Action<int, int> f) => f(1, 2);
 // TODO: Indexer. class C { int this[int arg1, int arg2] => this[1, 2]; }
 // TODO: `this` ctor initializer. class C { C(int arg1, int arg2) {} C() : this(1, 2) {} }
 // TODO: `base` ctor initializer. class C { public C(int arg1, int arg2) {} } class D : C { D() : base(1, 2) {} }
-// TODO: ctor. class C { C(int arg1, int arg2) { new C(1, 2); } }
 // TODO: Attribute's parameters and properties?
 [<Tests>]
 let codeFixProviderTests = 
@@ -165,4 +173,49 @@ let codeFixProviderTests =
 
                 originalSnippet |> Expect.toBeFixedAndMatch expectedFixedSnippet
             }]
- ]
+        testList "extension [RequireNamedArgs] method" [
+            test "Invocation w/ positional args is fixed to named args" {
+                let originalSource = Format.program @"
+                    class Wombat {}
+
+                    static class WombatExtensions
+                    {
+                        [RequireNamedArgs]
+                        public static void SwitchPowerLevel(this Wombat wombat, Action onOver9000, Action onUnderOrAt9000) {}
+                    }
+
+                    class Test { static void Run() { new Wombat().SwitchPowerLevel(() => {}, () => {}); } }
+                "
+
+                let expectedFixedSource = Format.program @"
+                    class Wombat {}
+
+                    static class WombatExtensions
+                    {
+                        [RequireNamedArgs]
+                        public static void SwitchPowerLevel(this Wombat wombat, Action onOver9000, Action onUnderOrAt9000) {}
+                    }
+
+                    class Test { static void Run() { new Wombat().SwitchPowerLevel(onOver9000: () => {}, onUnderOrAt9000: () => {}); } }
+                "
+
+                originalSource |> Expect.sourceToBeFixedAndMatch expectedFixedSource
+            }]
+        testList "Constructor w/ [RequireNamedArgs]" [
+            test "Invocation w/ positional args is fixed to named args" {
+                let originalSnippet = @"
+                    [RequireNamedArgs]
+                    public Wombat(string name, int powerLevel) {}
+
+                    public static Wombat Create() => new Wombat(""Goku"", 5000);
+                "
+                let expectedFixedSnippet = @"
+                    [RequireNamedArgs]
+                    public Wombat(string name, int powerLevel) {}
+
+                    public static Wombat Create() => new Wombat(name: ""Goku"", powerLevel: 5000);
+                "
+
+                originalSnippet |> Expect.toBeFixedAndMatch expectedFixedSnippet
+            }]
+        ]

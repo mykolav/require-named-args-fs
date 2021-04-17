@@ -149,7 +149,7 @@ let analyzerTests =
                 }
             "
         }
-        test "Extension method  w/ [RequireNamedArgs] invoked w/ names args does not trigger diagnostic" {
+        test "Extension method  w/ [RequireNamedArgs] invoked w/ named args does not trigger diagnostic" {
             Expect.emptyDiagnostics @"
                 static class PowerLevelExtensions
                 {

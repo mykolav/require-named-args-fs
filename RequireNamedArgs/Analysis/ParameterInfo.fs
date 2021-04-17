@@ -19,6 +19,18 @@ type ISymbol with
         | _                       -> ImmutableArray<IParameterSymbol>.Empty
         |> Seq.toList
 
+type ExpressionSyntax with
+    member exprSyntax.GetArgumentList() =
+        match exprSyntax with 
+        | :? InvocationExpressionSyntax as i -> Some i.ArgumentList
+        | :? ObjectCreationExpressionSyntax as o -> Some o.ArgumentList
+        | _ -> None
+
+    member exprSyntax.GetArguments() =
+        match exprSyntax.GetArgumentList() with 
+        | Some argList as i -> argList.Arguments
+        | None -> SeparatedSyntaxList<ArgumentSyntax>()
+
 /// <summary>
 /// To be able to convert positional arguments to named we need to find
 /// corresponding <see cref="IParameterSymbol" /> for each argument.
