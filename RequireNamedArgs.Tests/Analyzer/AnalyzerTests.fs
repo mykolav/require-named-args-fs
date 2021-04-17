@@ -17,7 +17,7 @@ module private Expect =
             {
                 %s
                 
-                [AttributeUsage(AttributeTargets.Method)]
+                [AttributeUsage(AttributeTargets.Method | AttributeTargets.Constructor)]
                 class RequireNamedArgsAttribute : Attribute {}    
             }
             
@@ -50,7 +50,6 @@ let klass (source: string) =
 // TODO:   Indexer. class C { int this[int arg1, int arg2] => this[1, 2]; }
 // TODO:   `this` ctor initializer. class C { C(int arg1, int arg2) {} C() : this(1, 2) {} }
 // TODO:   `base` ctor initializer. class C { public C(int arg1, int arg2) {} } class D : C { D() : base(1, 2) {} }
-// TODO:   ctor. class C { C(int arg1, int arg2) { new C(1, 2); } }
 // TODO:   Attribute's parameters and properties?
 [<Tests>]
 let analyzerTests = 
@@ -181,6 +180,45 @@ let analyzerTests =
             let expectedDiag = RequireNamedArgsDiagResult.Create(invokedMethod="SwitchPowerLevel",
                                                              paramNamesByType=[[ "line"; "column" ]],
                                                              fileName="Test0.cs", line=13u, column=35u)
+
+            [| expectedDiag |] |> Expect.toBeEmittedFrom testCodeSnippet
+        }
+        test "Constructor w/ [RequireNamedArgs] invoked w/ named args does not trigger diagnostic" {
+            Expect.emptyDiagnostics @"
+                class Wombat
+                {
+                    public string Name { get; }
+                    public int PowerLevel { get; }
+
+                    [RequireNamedArgs]
+                    public Wombat(string name, int powerLevel) => (Name, PowerLevel) = (name, powerLevel);
+
+                    public static Wombat Create()
+                    {
+                        return new Wombat(name: ""Goku"", powerLevel: 5000);
+                    }
+                }
+            "
+        }
+        test "Constructor w/ [RequireNamedArgs] invoked w/ positional args triggers diagnostic" {
+            let testCodeSnippet = @"
+                class Wombat
+                {
+                    public string Name { get; }
+                    public int PowerLevel { get; }
+
+                    [RequireNamedArgs]
+                    public Wombat(string name, int powerLevel) => (Name, PowerLevel) = (name, powerLevel);
+
+                    public static Wombat Create()
+                    {
+                        return new Wombat(""Goku"", 5000);
+                    }
+                }
+            "
+            let expectedDiag = RequireNamedArgsDiagResult.Create(invokedMethod=".ctor",
+                                                            paramNamesByType=[[ "line"; "column" ]],
+                                                            fileName="Test0.cs", line=15u, column=32u)
 
             [| expectedDiag |] |> Expect.toBeEmittedFrom testCodeSnippet
         }]

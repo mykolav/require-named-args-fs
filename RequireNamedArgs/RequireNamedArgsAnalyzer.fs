@@ -59,14 +59,14 @@ type public RequireNamedArgsAnalyzer() =
 
     member private this.Analyze(context: SyntaxNodeAnalysisContext) =
         maybe {
-            let! invocationExprSyntax = context.Node |> Option.ofType<InvocationExpressionSyntax>
-            let! methodSymbol = context.SemanticModel.GetSymbolInfo(invocationExprSyntax).Symbol 
+            let! exprSyntax = context.Node |> Option.ofType<ExpressionSyntax>
+            let! methodSymbol = context.SemanticModel.GetSymbolInfo(exprSyntax).Symbol 
                                 |> Option.ofType<IMethodSymbol>
             let! methodSymbol = methodSymbol |> this.filterSupported
             // We got a supported kind of method.
             // Delegate heavy-lifting to the call below.
             let! argsWhichShouldBeNamed = getArgsWhichShouldBeNamed context.SemanticModel 
-                                                                    invocationExprSyntax
+                                                                    exprSyntax
 
             // We inspected the arguments of invocation expression.
             if argsWhichShouldBeNamed |> Seq.any 
@@ -74,7 +74,7 @@ type public RequireNamedArgsAnalyzer() =
                  return context.ReportDiagnostic(
                      Diagnostic.Create(
                          descriptor, 
-                         invocationExprSyntax.GetLocation(),
+                         exprSyntax.GetLocation(),
                          // messageArgs
                          methodSymbol.Name, 
                          this.formatDiagMessage argsWhichShouldBeNamed))

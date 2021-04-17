@@ -50,9 +50,12 @@ module Expect =
         let expectCountsToMatch() = 
             let expectedCount = expected |> Seq.length
             let actualCount = actual |> Seq.length
+            let mutable diagString = ""
+            for d in actual do 
+               diagString <- diagString + d.ToString()
             Expect.isTrue (expectedCount = actualCount)
-                          (sprintf "Mismatch between number of diagnostics returned, expected \"%d\" actual \"%d\"\r\n\r\nDiagnostics:\r\n%s\r\n"
-                                   expectedCount actualCount (if Seq.any actual then analyzer.Format actual else "    NONE."))
+                          (sprintf "Mismatch between number of diagnostics returned, expected \"%d\" actual \"%d\"\r\n\r\nDiagnostics:\r\n%s: %s\r\n"
+                                   expectedCount actualCount diagString (if Seq.any actual then analyzer.Format actual else "    NONE."))
 
         let expectDiagsToMatch (expected: DiagResult, actual: Diagnostic) =
             let describeDiag() = analyzer.Format [actual]
