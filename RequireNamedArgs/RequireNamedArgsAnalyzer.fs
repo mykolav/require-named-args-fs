@@ -6,10 +6,9 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
 open Microsoft.CodeAnalysis.CSharp.Syntax
 open Microsoft.CodeAnalysis.Diagnostics
-open RequireNamedArgs.ArgumentAndParameter // Actually it's used
+open RequireNamedArgs.ArgumentAndParameter
 open RequireNamedArgs.CSharpAdapters
 open RequireNamedArgs.InvocationExprSyntax
-open RequireNamedArgs.MaybeBuilder
 
 [<DiagnosticAnalyzer(LanguageNames.CSharp)>]
 type public RequireNamedArgsAnalyzer() = 
@@ -29,6 +28,21 @@ type public RequireNamedArgsAnalyzer() =
             description=description,
             helpLinkUri=null)
 
+
+    let isSupported (methodSymbol: IMethodSymbol) = 
+        match methodSymbol.MethodKind with
+        // So far we only support analyzing of the four kinds of methods listed below.
+        | MethodKind.Ordinary
+        | MethodKind.Constructor 
+        | MethodKind.LocalFunction
+        | MethodKind.ReducedExtension -> true 
+        | _                           -> false
+
+    let formatDiagMessage argsWhichShouldBeNamed =
+        String.Join(
+            ", ",
+            argsWhichShouldBeNamed |> Seq.map (fun it -> sprintf "'%s'" it.ParamSymbol.Name))
+
     static member DiagnosticId = diagnosticId
     static member MessageFormat = messageFormat
 
@@ -43,42 +57,40 @@ type public RequireNamedArgsAnalyzer() =
             SyntaxKind.InvocationExpression, 
             SyntaxKind.ObjectCreationExpression)
 
-    member private this.filterSupported (methodSymbol: IMethodSymbol) = 
-        match methodSymbol.MethodKind with
-        // So far we only support analyzing of the four kinds of methods listed below.
-        | MethodKind.Ordinary
-        | MethodKind.Constructor 
-        | MethodKind.LocalFunction
-        | MethodKind.ReducedExtension -> Some methodSymbol 
-        | _                           -> None
-
-    member private this.formatDiagMessage argsWhichShouldBeNamed =
-        String.Join(
-            ", ",
-            argsWhichShouldBeNamed |> Seq.map (fun it -> sprintf "'%s'" it.Parameter.Name))
-
     member private this.Analyze(context: SyntaxNodeAnalysisContext) =
-        maybe {
-            let! exprSyntax = context.Node |> Option.ofType<ExpressionSyntax>
-            let! methodSymbol = context.SemanticModel.GetSymbolInfo(exprSyntax).Symbol 
-                                |> Option.ofType<IMethodSymbol>
-            let! methodSymbol = methodSymbol |> this.filterSupported
-            // We got a supported kind of method.
-            // Delegate heavy-lifting to the call below.
-            let! argsWhichShouldBeNamed = getArgsWhichShouldBeNamed context.SemanticModel 
-                                                                    exprSyntax
+        match Option.ofType<ExpressionSyntax>(context.Node) with
+        | Some exprSyntax ->
+            match Option.ofType<IMethodSymbol>(context.SemanticModel.GetSymbolInfo(exprSyntax).Symbol) with
+            | Some analyzedMethodSymbol ->
+                if not (isSupported analyzedMethodSymbol)
+                then
+                    ()
+                else
+                    
+                // We got a supported kind of method.
+                // Delegate heavy-lifting to the call below.
+                let argsWhichShouldBeNamedRes =
+                    getArgsWhichShouldBeNamed context.SemanticModel 
+                                              exprSyntax
 
-            // We inspected the arguments of invocation expression.
-            if argsWhichShouldBeNamed |> Seq.any 
-            then // There are arguments that should be named -- emit the diagnostic.
-                 return context.ReportDiagnostic(
-                     Diagnostic.Create(
-                         descriptor, 
-                         exprSyntax.GetLocation(),
-                         // messageArgs
-                         methodSymbol.Name, 
-                         this.formatDiagMessage argsWhichShouldBeNamed))
-            // If none of them should be named or, maybe, they already are named,
-            // we have nothing more to do.
-            else return ()
-        } |> ignore
+                // We inspected the arguments of invocation expression.
+                if argsWhichShouldBeNamedRes.ShouldStopAnalysis ||
+                   argsWhichShouldBeNamedRes.Value.Length = 0 
+                then
+                    ()
+                else
+
+                // There are arguments that should be named -- emit the diagnostic.
+                context.ReportDiagnostic(
+                    Diagnostic.Create(
+                        descriptor, 
+                        exprSyntax.GetLocation(),
+                        // messageArgs
+                        analyzedMethodSymbol.Name, 
+                        formatDiagMessage argsWhichShouldBeNamedRes.Value))
+                
+            | None ->
+                ()
+        | None ->
+            ()
+            

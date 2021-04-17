@@ -3,6 +3,6 @@
 open Microsoft.CodeAnalysis.CSharp.Syntax
 open Microsoft.CodeAnalysis
 
-type ArgumentAndParameter = {
-    Argument: ArgumentSyntax;
-    Parameter: IParameterSymbol }
+type ArgWithParamSymbol = {
+    ArgSyntax: ArgumentSyntax;
+    ParamSymbol: IParameterSymbol }

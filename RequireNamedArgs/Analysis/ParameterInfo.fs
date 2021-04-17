@@ -4,31 +4,29 @@ open System
 open System.Collections.Immutable
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp.Syntax
-open RequireNamedArgs.CSharpAdapters
-open RequireNamedArgs.MaybeBuilder
+open RequireNamedArgs.Res
 
-type ParameterInfo = {
-    MethodOrProperty : ISymbol;
-    Parameter : IParameterSymbol }
+type ParamInfo = {
+    MethodOrPropertySymbol : ISymbol
+    ParamSymbol : IParameterSymbol }
 
 type ISymbol with
-    member symbol.GetParameters() =
+    member symbol.GetParameters(): ImmutableArray<IParameterSymbol> =
         match symbol with
         | :? IMethodSymbol as s   -> s.Parameters
         | :? IPropertySymbol as s -> s.Parameters
         | _                       -> ImmutableArray<IParameterSymbol>.Empty
-        |> Seq.toList
 
 type ExpressionSyntax with
-    member exprSyntax.GetArgumentList() =
+    member exprSyntax.GetArgumentList(): ArgumentListSyntax option =
         match exprSyntax with 
         | :? InvocationExpressionSyntax as i -> Some i.ArgumentList
         | :? ObjectCreationExpressionSyntax as o -> Some o.ArgumentList
         | _ -> None
 
-    member exprSyntax.GetArguments() =
+    member exprSyntax.GetArguments(): SeparatedSyntaxList<ArgumentSyntax> =
         match exprSyntax.GetArgumentList() with 
-        | Some argList as i -> argList.Arguments
+        | Some argList -> argList.Arguments
         | None -> SeparatedSyntaxList<ArgumentSyntax>()
 
 /// <summary>
@@ -36,38 +34,62 @@ type ExpressionSyntax with
 /// corresponding <see cref="IParameterSymbol" /> for each argument.
 /// </summary>
 type SemanticModel with
-    member sema.GetParameterInfo (argument: ArgumentSyntax) = maybe {
-        let argList = argument.Parent :?> ArgumentListSyntax
+    member sema.GetParameterInfo (argSyntax: ArgumentSyntax): Res<ParamInfo> =
+        let argList = argSyntax.Parent :?> ArgumentListSyntax
         let exprSyntax = argList.Parent  :?> ExpressionSyntax
-        let methodOrProperty = sema.GetSymbolInfo(exprSyntax).Symbol
+        let methodOrPropertySymbol = sema.GetSymbolInfo(exprSyntax).Symbol
 
-        let parameters = methodOrProperty.GetParameters()
-        if parameters.IsEmpty
-        then return! None
+        let paramSymbols = methodOrPropertySymbol.GetParameters()
+        if paramSymbols.IsEmpty
+        then
+            // We have an ArgumentSyntax but the corresponding method
+            // doesn't take any parameters.
+            // Looks like a compile error in the analyzed invocation:
+            // it passes an argument to a method that doesn't take any.
+            // We pass up on analyzing this invocation, compiler will emit a diagnostic about it.
+            StopAnalysis
         else
 
-        if isNull argument.NameColon 
+        if isNull argSyntax.NameColon 
         then
-            // A positional argument.
-            match argList.Arguments.IndexOf(argument) with
-            | index when index >= 0 && index < parameters.Length -> 
-                return { MethodOrProperty = methodOrProperty;
-                         Parameter = parameters.[index] }
-            | index when index >= parameters.Length 
-                            && parameters.[parameters.Length - 1].IsParams ->
-                return { MethodOrProperty = methodOrProperty;
-                         Parameter = parameters.[parameters.Length - 1] }
-            | _ -> return! None
+            // We found a positional argument.
+            
+            match argList.Arguments.IndexOf(argSyntax) with
+            | index when index >= 0 && index < paramSymbols.Length -> 
+                Ok { MethodOrPropertySymbol = methodOrPropertySymbol;
+                     ParamSymbol = paramSymbols.[index] }
+            | index when index >= paramSymbols.Length &&
+                         paramSymbols.[paramSymbols.Length - 1].IsParams ->
+                Ok { MethodOrPropertySymbol = methodOrPropertySymbol;
+                     ParamSymbol = paramSymbols.[paramSymbols.Length - 1] }
+            | _ ->
+                StopAnalysis
         else 
-            // Potentially, this is a named argument.
-            let! name = argument.NameColon.Name |> Option.ofObj
-            let! nameText = name.Identifier.ValueText |> Option.ofObj
+            // Potentially, we found a named argument.
+            
+            if (isNull argSyntax.NameColon.Name) ||
+               (isNull argSyntax.NameColon.Name.Identifier.ValueText)
+            then
+                // We encountered an argument in the analyzed invocation,
+                // that we don't know how to handle.
+                // Pass up on analyzing this invocation.
+                // (How can `NameColon.Name` or `NameColon.Name.Identifier.ValueText` actually be null?)
+                StopAnalysis
+            else
+                
             // Yes, it's a named argument.
-            let! parameter = parameters |> Seq.tryFind (fun param -> 
-                String.Equals(param.Name, 
-                              nameText, 
-                              StringComparison.Ordinal))
 
-            return { MethodOrProperty = methodOrProperty;
-                     Parameter = parameter }
-    }
+            let paramName = argSyntax.NameColon.Name.Identifier.ValueText
+            let parameterOpt =
+                paramSymbols
+                |> Seq.tryFind (fun param -> String.Equals(param.Name, paramName, StringComparison.Ordinal))
+                
+            match parameterOpt with
+            | Some parameter ->
+                Ok { MethodOrPropertySymbol = methodOrPropertySymbol;
+                     ParamSymbol = parameter }
+            | None ->
+                // We could not find a parameter with the name matching the argument's name.
+                // Looks like a compile error in the analyzed invocation: it's using a wrong name to name an argument.
+                // We pass up on analyzing this invocation, compiler will emit a diagnostic about it.
+                StopAnalysis

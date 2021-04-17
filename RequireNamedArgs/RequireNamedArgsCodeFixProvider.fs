@@ -12,6 +12,7 @@ open Microsoft.CodeAnalysis.CSharp.Syntax
 open FSharp.Control.Tasks.V2.ContextInsensitive
 open RequireNamedArgs.Analyzer
 open RequireNamedArgs.ParameterInfo
+open RequireNamedArgs.Res
 
 [<ExportCodeFixProvider(LanguageNames.CSharp, Name = "RequireNamedArgsCodeFixProvider")>]
 [<Shared>]
@@ -56,26 +57,30 @@ type public RequireNamedArgsCodeFixProvider() =
                                                    cancellationToken: CancellationToken) = task {
         let! sema = document.GetSemanticModelAsync(cancellationToken)
 
-        let maybeNameArg (arg: ArgumentSyntax) =
-            match sema.GetParameterInfo arg with
-            | Some { Parameter = param } -> arg.WithNameColon(SyntaxFactory.NameColon(param.Name))
-                                                // Preserve whitespaces, etc. from the original code.
-                                               .WithTriviaFrom(arg)
-            | _ -> arg
+        let withNameColon (argSyntax: ArgumentSyntax) =
+            match sema.GetParameterInfo argSyntax with
+            | Ok paramInfo ->
+                argSyntax.WithNameColon(
+                    SyntaxFactory.NameColon(paramInfo.ParamSymbol.Name))
+                                 .WithTriviaFrom(argSyntax) // Preserve whitespaces, etc. from the original code.
+            | _ ->
+                argSyntax
         
         // As it's the named args code fix provider, 
         // the analyzer has already checked that it's OK to make these args named.
         match exprSyntax.GetArgumentList() with
-        | Some originalArgumentList ->
-            let maybeNamedArgSyntaxes = originalArgumentList.Arguments |> Seq.map maybeNameArg
+        | Some originalArgListSyntax ->
+            let namedArgSyntaxes = originalArgListSyntax.Arguments |> Seq.map withNameColon
 
-            let newArgumentList = originalArgumentList.WithArguments(
-                                     SyntaxFactory.SeparatedList(
-                                         maybeNamedArgSyntaxes,
-                                         originalArgumentList.Arguments.GetSeparators()))
+            let newArgListSyntax =
+                originalArgListSyntax.WithArguments(
+                    SyntaxFactory.SeparatedList(
+                        namedArgSyntaxes,
+                        originalArgListSyntax.Arguments.GetSeparators()))
+            
             // An argument list is an "addressable" syntax element, that we can directly
             // replace in the document's root.
-            return document.WithSyntaxRoot(root.ReplaceNode(originalArgumentList, newArgumentList))
+            return document.WithSyntaxRoot(root.ReplaceNode(originalArgListSyntax, newArgListSyntax))
         | None ->
             return document
     }

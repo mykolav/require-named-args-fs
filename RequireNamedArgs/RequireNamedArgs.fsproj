@@ -11,6 +11,7 @@
     <Compile Include="Support\SeqExtensions.fs" />
     <Compile Include="Support\CSharpAdapters.fs" />
     <Compile Include="Support\MaybeBuilder.fs" />
+    <Compile Include="Support\Res.fs" />
     <Compile Include="Analysis\ParameterInfo.fs" />
     <Compile Include="Analysis\ArgumentAndParameter.fs" />
     <Compile Include="Analysis\InvocationExprSyntax.fs" />

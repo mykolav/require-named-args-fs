@@ -5,7 +5,7 @@ type MaybeBuilder() =
     member this.ReturnFrom(m) = m
     member this.Bind(m, f)    = Option.bind f m
 
-let maybe = new MaybeBuilder()
+let maybe = MaybeBuilder()
 
 let (>>=) m f = Option.bind f m
 let (|>>) m f = Option.map f m
