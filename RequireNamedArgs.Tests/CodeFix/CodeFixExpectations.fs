@@ -27,8 +27,8 @@ module Expect =
     ///       For details see 
     ///         <see href="https://github.com/dotnet/roslyn-analyzers/issues/1787">this question in the roslyn-analyzers repo</see>
     /// </summary>
-    /// <param name="diagnostics">The Diagnostics that existed in the code before the CodeFix was applied</param>
-    /// <param name="newDiagnostics">The Diagnostics that exist in the code after the CodeFix was applied</param>
+    /// <param name="prevDiags">The Diagnostics that existed in the code before the CodeFix was applied</param>
+    /// <param name="curDiags">The Diagnostics that exist in the code after the CodeFix was applied</param>
     let private getAddedDiags (prevDiags: Diagnostic seq) (curDiags: Diagnostic seq) =
         let prevDiags = prevDiags |> List.ofSeq |> List.sortBy (fun d -> d.Id, d.Location.SourceSpan.Start)
         let currDiags = curDiags |> List.ofSeq |> List.sortBy (fun d -> d.Id, d.Location.SourceSpan.Start)
@@ -111,7 +111,7 @@ module Expect =
     /// <param name="originalSource">A class in the form of a string before the CodeFix was applied to it</param>
     /// <param name="expectedSource">A class in the form of a string after the CodeFix was applied to it</param>
     /// <param name="codeFixIndex">Index determining which codefix to apply if there are multiple</param>
-    /// <param name="allowNewCompilerDiagnostics">A bool controlling whether or not the test will fail if the CodeFix introduces other warnings after being applied</param>
+    /// <param name="allowNewCompilerDiags">A bool controlling whether or not the test will fail if the CodeFix introduces other warnings after being applied</param>
     let toMatchFixedCode (analyzer: DiagnosticAnalyzer) 
                          (codeFixProvider: CodeFixProvider) 
                          (lang: Langs) (originalSource: string) 
