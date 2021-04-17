@@ -1,0 +1,47 @@
+
+# Notes:
+#   - Minimal appveyor.yml file is an empty file. All sections are optional.
+#   - Indent each level of configuration with 2 spaces. Do not use tabs!
+#   - All section names are case-sensitive.
+#   - Section names should be unique on each level.
+
+#---------------------------------#
+#      general configuration      #
+#---------------------------------#
+
+# branches to build
+branches:
+  # whitelist
+  only:
+    - master
+
+# Skipping commits affecting specific files (GitHub only).
+# More details here: /docs/appveyor-yml
+skip_commits:
+  files:
+    - '**/*.md'
+
+#---------------------------------#
+#    environment configuration    #
+#---------------------------------#
+
+# Build worker image (VM template)
+image: Visual Studio 2019
+
+#---------------------------------#
+#       build configuration       #
+#---------------------------------#
+
+# build Configuration, i.e. Debug, Release, etc.
+configuration: Release
+
+# to run your custom scripts instead of automatic MSBuild
+build:
+  project: require-named-args-fs.sln
+  publish_nuget: true
+
+# AppVeyor's Tests Window is empty?
+# See https://stackoverflow.com/a/53309039/818321
+test_script:
+  - nuget install Appveyor.TestLogger -Version 2.0.0
+  - dotnet test --no-build --no-restore --test-adapter-path:. --logger:Appveyor ./RequireNamedArgs.Tests/RequireNamedArgs.Tests.fsproj
