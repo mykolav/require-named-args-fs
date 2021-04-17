@@ -1,5 +1,7 @@
 # Require a method to be invoked with named arguments
 
+[![Build status](https://ci.appveyor.com/api/projects/status/uucjd3ti7tjmmn9d?svg=true)](https://ci.appveyor.com/project/mykolav/require-named-args-fs)
+
 ## Motivation
 ### 1. There seems to be a certain level of interest in having a way to [force named arguments in C#](https://stackoverflow.com/questions/11300645/forcing-named-arguments-in-c-sharp)
 
