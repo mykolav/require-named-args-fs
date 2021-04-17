@@ -6,12 +6,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="Support\SeqExtensions.fs" />
     <Compile Include="Support\DiagnosticResult.fs" />
     <Compile Include="Support\DiagnosticFormatter.fs" />
     <Compile Include="Support\DocumentFactory.fs" />
     <Compile Include="Support\DiagnosticMatcher.fs" />
     <Compile Include="Support\DiagnosticProvider.fs" />
     <Compile Include="Support\DocumentExtensions.fs" />
+    <Compile Include="Support\Format.fs" />
     <Compile Include="Analyzer\RequireNamedArgsDiagResult.fs" />
     <Compile Include="Analyzer\AnalyzerTests.fs" />
     <Compile Include="CodeFix\CodeFixExpectations.fs" />

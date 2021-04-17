@@ -1,5 +1,6 @@
 ﻿module RequireNamedArgs.CodeFixProvider
 
+
 open System.Collections.Immutable
 open System.Composition
 open System.Threading
@@ -12,22 +13,27 @@ open Microsoft.CodeAnalysis.CSharp.Syntax
 open FSharp.Control.Tasks.V2.ContextInsensitive
 open RequireNamedArgs.Analyzer
 open RequireNamedArgs.ParameterInfo
-open RequireNamedArgs.Res
+open RequireNamedArgs.Support
+
 
 [<ExportCodeFixProvider(LanguageNames.CSharp, Name = "RequireNamedArgsCodeFixProvider")>]
 [<Shared>]
 type public RequireNamedArgsCodeFixProvider() = 
     inherit CodeFixProvider()
 
+
     static let title = "Use named args"
     
+
     // This tells the infrastructure that this code-fix provider corresponds to
     // the `RequireNamedArgsAnalyzer` analyzer.
     override val FixableDiagnosticIds = ImmutableArray.Create(RequireNamedArgsAnalyzer.DiagnosticId)
 
+
     // See https://github.com/dotnet/roslyn/blob/master/docs/analyzers/FixAllProvider.md 
     // for more information on Fix All Providers
     override this.GetFixAllProvider() = WellKnownFixAllProviders.BatchFixer
+
 
     override this.RegisterCodeFixesAsync(context) = (task {
         let! root = context.Document.GetSyntaxRootAsync(context.CancellationToken)
@@ -50,6 +56,7 @@ type public RequireNamedArgsCodeFixProvider() =
             diagnostic)
         return ()
     } :> Task)
+
 
     member private this.RequireNamedArgumentsAsync(document: Document,
                                                    root: SyntaxNode,

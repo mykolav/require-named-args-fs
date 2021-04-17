@@ -1,14 +1,17 @@
 ﻿module RequireNamedArgs.ParameterInfo
 
+
 open System
 open System.Collections.Immutable
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp.Syntax
-open RequireNamedArgs.Res
+open RequireNamedArgs.Support
+
 
 type ParamInfo = {
     MethodOrPropertySymbol : ISymbol
     ParamSymbol : IParameterSymbol }
+
 
 type ISymbol with
     member symbol.GetParameters(): ImmutableArray<IParameterSymbol> =
@@ -17,17 +20,22 @@ type ISymbol with
         | :? IPropertySymbol as s -> s.Parameters
         | _                       -> ImmutableArray<IParameterSymbol>.Empty
 
+
 type ExpressionSyntax with
+
+
     member exprSyntax.GetArgumentList(): ArgumentListSyntax option =
         match exprSyntax with 
         | :? InvocationExpressionSyntax as i -> Some i.ArgumentList
         | :? ObjectCreationExpressionSyntax as o -> Some o.ArgumentList
         | _ -> None
 
+
     member exprSyntax.GetArguments(): SeparatedSyntaxList<ArgumentSyntax> =
         match exprSyntax.GetArgumentList() with 
         | Some argList -> argList.Arguments
         | None -> SeparatedSyntaxList<ArgumentSyntax>()
+
 
 /// <summary>
 /// To be able to convert positional arguments to named we need to find

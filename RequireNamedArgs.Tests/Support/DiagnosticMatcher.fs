@@ -1,12 +1,16 @@
-﻿module RequireNamedArgs.Tests.Support.DiagnosticMatcher
+﻿namespace RequireNamedArgs.Tests.Support
+
 
 [<RequireQualifiedAccess>]
 module Expect = 
+
+
     open Expecto
     open Microsoft.CodeAnalysis
     open Microsoft.CodeAnalysis.Diagnostics
     open RequireNamedArgs.Tests.Support.DiagnosticFormatter
-    open RequireNamedArgs.Tests.Support.DiagnosticResult
+    open RequireNamedArgs.Tests.Support
+
 
     let private expectLocationsToMatch describeDiag (expectedLoc: DiagResultLocation, actual: Location) =
         let actualSpan = actual.GetLineSpan()
@@ -36,6 +40,7 @@ module Expect =
                                     expectedLoc.Col (actualLinePos.Character + 1) <| describeDiag())
         expectColsToMatch()
 
+
     /// <summary>
     /// Checks each of the actual Diagnostics found and compares them with 
     /// the corresponding DiagnosticResult in the array of expected results.
@@ -45,8 +50,9 @@ module Expect =
     /// <param name="analyzer">The analyzer that was being run on the sources</param>
     /// <param name="expected">Diagnostic Results that should have appeared in the code</param>
     /// <param name="actual">The Diagnostics found by the compiler after running the analyzer on the source code</param>
-    let diagnosticsToMatch (analyzer: DiagnosticAnalyzer) 
-                           (actual: seq<Diagnostic>) (expected: seq<DiagResult>) =
+    let diagsToMatch (analyzer: DiagnosticAnalyzer) 
+                     (actual: seq<Diagnostic>)
+                     (expected: seq<DiagResult>) =
         let expectCountsToMatch() = 
             let expectedCount = expected |> Seq.length
             let actualCount = actual |> Seq.length

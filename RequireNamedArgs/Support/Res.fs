@@ -1,4 +1,5 @@
-module RequireNamedArgs.Res
+namespace RequireNamedArgs.Support
+
 
 [<Struct; DefaultAugmentation(false)>]
 type Res<'T>

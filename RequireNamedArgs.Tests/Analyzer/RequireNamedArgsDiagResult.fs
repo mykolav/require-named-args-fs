@@ -1,13 +1,15 @@
-﻿module RequireNamedArgs.Tests.Support.RequireNamedArgsDiagResult
+﻿namespace RequireNamedArgs.Tests.Support
+
 
 open System
 open System.Text
 open Microsoft.CodeAnalysis
-open DiagnosticResult
 open RequireNamedArgs.Analyzer
+
 
 type RequireNamedArgsDiagResult() =
 
+    
     static member Create(invokedMethod: string,
                          paramNamesByType: string seq seq,
                          fileName: string,

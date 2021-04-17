@@ -1,7 +1,10 @@
-﻿module RequireNamedArgs.Tests.Support.CodeFixExpectations
+﻿namespace RequireNamedArgs.Tests.Support
+
 
 [<RequireQualifiedAccess>]
-module Expect =
+module CodeFixExpect =
+    
+    
     open System
     open System.Collections.Generic
     open System.Threading
@@ -14,8 +17,8 @@ module Expect =
     open DiagnosticProvider
     open DocumentExtensions
     open DocumentFactory
-    open RequireNamedArgs.MaybeBuilder
 
+    
     /// <summary>
     /// Compare two collections of Diagnostics 
     /// and return a list of any diagnostics that appear only in the second collection.
@@ -58,9 +61,11 @@ module Expect =
             let newDiags = compare [] 0 0 |> List.sortBy (fun d -> d.Location.SourceSpan.Start)
             newDiags
 
+    
     let private formatDiags (diags: Diagnostic list) =
         String.Join("\r\n", diags |> Seq.map (fun d -> d.ToString()))
 
+    
     let private fixCode (analyzer: DiagnosticAnalyzer) 
                         (codeFixProvider: CodeFixProvider) 
                         (doc: Document) (analyzerDiags: Diagnostic list)
@@ -99,6 +104,7 @@ module Expect =
                         (doc.GetSyntaxRootAsync().Result.ToFullString())
         None
 
+    
     /// <summary>
     /// General verifier for codefixes.
     /// Creates a Document from the source string, then gets diagnostics on it and applies the relevant codefixes.
@@ -112,30 +118,38 @@ module Expect =
     /// <param name="expectedSource">A class in the form of a string after the CodeFix was applied to it</param>
     /// <param name="codeFixIndex">Index determining which codefix to apply if there are multiple</param>
     /// <param name="allowNewCompilerDiags">A bool controlling whether or not the test will fail if the CodeFix introduces other warnings after being applied</param>
-    let toMatchFixedCode (analyzer: DiagnosticAnalyzer) 
+    let expectedFixedCodeToMatchActualFixedCode (analyzer: DiagnosticAnalyzer) 
                          (codeFixProvider: CodeFixProvider) 
-                         (lang: Langs) (originalSource: string) 
-                         (codeFixIndex: int option) (allowNewCompilerDiags: bool)
-                         (expectedSource: string) =
+                         (lang: Langs)
+                         (originalSource: string) 
+                         (codeFixIndex: int option)
+                         (allowNewCompilerDiags: bool)
+                         (expectedSource: string): unit =
         let doc = mkDocument(originalSource, lang)
         let analyzerDiags = analyzer.GetSortedDiagnosticsFromDocs([doc])
         let maxAttempts = analyzerDiags |> Seq.length
 
-        let rec attemptToFixCode attemptsCount = maybe {
+        let rec tryFixCode attemptsCount = 
             if attemptsCount >= maxAttempts 
-            then return doc else
-            //check if there are analyzer diagnostics left after the code fix
-            let! doc, analyzerDiags = fixCode analyzer codeFixProvider 
-                                              doc analyzerDiags codeFixIndex 
-                                              allowNewCompilerDiags
-            if Seq.any analyzerDiags
-            then return! attemptToFixCode <| attemptsCount + 1 
-            else return doc
-        }
+            then
+                Some doc
+            else
+            
+            // Check if there are analyzer diagnostics left after the code fix
+            match fixCode analyzer codeFixProvider doc analyzerDiags codeFixIndex allowNewCompilerDiags with
+            | Some (doc, analyzerDiags) ->
+                if Seq.any analyzerDiags
+                then
+                    tryFixCode (attemptsCount + 1) 
+                else
+                    Some doc
+            | None ->
+                None
 
-        maybe {
-            let! fixedDoc = attemptToFixCode 0
+        match tryFixCode 0 with
+        | Some fixedDoc ->
             let actualFixedSource = fixedDoc.ToSourceCode().Replace("\r\n", "\n")
             let expectedFixedSource = expectedSource.Replace("\r\n", "\n")
-            return Expect.equal actualFixedSource expectedFixedSource ""
-        } |> ignore
+            Expect.equal actualFixedSource expectedFixedSource ""
+        | None ->
+            ()
