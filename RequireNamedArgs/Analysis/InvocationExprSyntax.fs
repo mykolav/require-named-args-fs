@@ -50,7 +50,7 @@ let private namedArgsRequired (sema: SemanticModel)
 /// to see if any of the arguments need to be named.
 /// </summary>
 /// <param name="sema">The semantic model is necessary for the analysis</param>
-/// <param name="invocationExprSyntax">The invocation to analyze</param>
+/// <param name="exprSyntax">The invocation to analyze</param>
 /// <returns>
 /// An option of list of arguments which should be named grouped by their types.
 /// </returns>
