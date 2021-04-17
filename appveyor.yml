@@ -35,9 +35,14 @@ image: Visual Studio 2019
 # build Configuration, i.e. Debug, Release, etc.
 configuration: Release
 
+# scripts to run before build
+before_build:
+  - nuget restore
+
 # to run your custom scripts instead of automatic MSBuild
 build:
   project: require-named-args-fs.sln
+  parallel: true
   publish_nuget: true
 
 # AppVeyor's Tests Window is empty?
