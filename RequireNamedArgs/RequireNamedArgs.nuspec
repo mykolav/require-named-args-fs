@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>RequireNamedArgs</id>
-    <version>0.0.3</version>
+    <version>0.0.4</version>
     <authors>Mykola Musiienko</authors>
     <owners>Mykola Musiienko</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
@@ -10,10 +10,10 @@
     <projectUrl>https://github.com/mykolav/require-named-args-fs</projectUrl>
     <icon>icon.png</icon>
     <description>"Require named arguments" Roslyn code analyzer and code-fix provider for C#</description>
-    <copyright>Copyright © Mykola Musiienko 2020</copyright>
+    <copyright>Copyright © Mykola Musiienko 2021</copyright>
     <tags>roslyn roslyn-analyzer</tags>
     <repository url="https://github.com/mykolav/require-named-args-fs" />
-    <releaseNotes>https://github.com/kkkmail contributed support for extension methods</releaseNotes>  
+    <releaseNotes>Jeff Ward (https://github.com/fuzzybinary) contributed support for constructors</releaseNotes>  
 
   <dependencies>
     <group>
