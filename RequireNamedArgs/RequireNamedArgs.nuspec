@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>RequireNamedArgs</id>
-    <version>0.0.4</version>
+    <version>0.0.5</version>
     <authors>Mykola Musiienko</authors>
     <owners>Mykola Musiienko</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
