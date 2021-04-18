@@ -12,7 +12,7 @@ open Microsoft.CodeAnalysis.CSharp
 open Microsoft.CodeAnalysis.CSharp.Syntax
 open FSharp.Control.Tasks.V2.ContextInsensitive
 open RequireNamedArgs.Analyzer
-open RequireNamedArgs.ParameterInfo
+open RequireNamedArgs.Analysis.ParamInfo
 open RequireNamedArgs.Support
 
 
@@ -46,7 +46,7 @@ type public RequireNamedArgsCodeFixProvider() =
             CodeAction.Create(
                 title,
                 createChangedDocument = fun cancellationToken -> task {
-                    return! this.RequireNamedArgumentsAsync(
+                    return! this.PrefixArgsWithNamesAsync(
                         context.Document, 
                         root,
                         exprSyntax, 
@@ -58,26 +58,29 @@ type public RequireNamedArgsCodeFixProvider() =
     } :> Task)
 
 
-    member private this.RequireNamedArgumentsAsync(document: Document,
-                                                   root: SyntaxNode,
-                                                   exprSyntax: ExpressionSyntax,
-                                                   cancellationToken: CancellationToken) = task {
+    member private this.PrefixArgsWithNamesAsync(document: Document,
+                                                 root: SyntaxNode,
+                                                 exprSyntax: ExpressionSyntax,
+                                                 cancellationToken: CancellationToken) = task {
         let! sema = document.GetSemanticModelAsync(cancellationToken)
 
-        let withNameColon (argSyntax: ArgumentSyntax) =
-            match sema.GetParameterInfo argSyntax with
-            | Ok paramInfo ->
-                argSyntax.WithNameColon(
-                    SyntaxFactory.NameColon(paramInfo.ParamSymbol.Name))
-                                 .WithTriviaFrom(argSyntax) // Preserve whitespaces, etc. from the original code.
-            | _ ->
-                argSyntax
-        
         // As it's the named args code fix provider, 
         // the analyzer has already checked that it's OK to make these args named.
         match exprSyntax.GetArgumentList() with
         | Some originalArgListSyntax ->
-            let namedArgSyntaxes = originalArgListSyntax.Arguments |> Seq.map withNameColon
+            let exprSyntax = originalArgListSyntax.Parent  :?> ExpressionSyntax
+            let methodOrPropertySymbol = sema.GetSymbolInfo(exprSyntax).Symbol
+
+            let withNameColon (argIndex: int) (argSyntax: ArgumentSyntax) =
+                match sema.GetParameterInfo(methodOrPropertySymbol, argIndex, argSyntax) with
+                | Ok paramInfo ->
+                    argSyntax.WithNameColon(
+                        SyntaxFactory.NameColon(paramInfo.ParamSymbol.Name))
+                                     .WithTriviaFrom(argSyntax) // Preserve whitespaces, etc. from the original code.
+                | _ ->
+                    argSyntax
+
+            let namedArgSyntaxes = originalArgListSyntax.Arguments |> Seq.mapi withNameColon
 
             let newArgListSyntax =
                 originalArgListSyntax.WithArguments(
