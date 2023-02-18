@@ -133,7 +133,7 @@ This will download all the binaries, and add necessary analyzer references to yo
 2. Introduce `RequireNamedArgsAttribute` attribute to your solution.  
    I. e., create your own  
    ```csharp
-   [AttributeUsage(AttributeTargets.Method)]
+   [AttributeUsage(AttributeTargets.Method | AttributeTargets.Constructor)]
    public class RequireNamedArgsAttribute : Attribute { }
    ```
 3. Mark methods which should only be invoked with named arguments with a `[RequireNamedArgs]` attribute.   
