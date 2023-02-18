@@ -149,6 +149,27 @@ public static void TellPowerLevel(string name, int powerLevel) {}
 TellPowerLevel(name: "Goku", powerLevel: 9001);
 ```
 
+## Configuration
+
+Starting in Visual Studio 2019 version 16.3, you can [configure the severity of analyzer rules, or diagnostics](https://learn.microsoft.com/en-us/visualstudio/code-quality/use-roslyn-analyzers?view=vs-2022#configure-severity-levels), in an EditorConfig file, from the light bulb menu, and the error list.
+
+Add the following to the `[*.cs]` section of your .editorconfig.
+
+```ini
+[*.cs]
+dotnet_diagnostic.RequireNamedArgs.severity = error
+```
+
+The possible severity values are:
+- `error`
+- `warning`
+- `suggestion`
+- `silent`
+- `none`
+- `default` (in case of this analyzer, it's equal to `error`)
+
+Please take a look at [the documentation](https://learn.microsoft.com/en-us/visualstudio/code-quality/use-roslyn-analyzers?view=vs-2022#configure-severity-levels) for a detailed description.
+
 ## How does it work?
 
 1. This analyzer looks at an invocation expression (e.g., a method call).
