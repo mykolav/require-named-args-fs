@@ -50,9 +50,10 @@ type public RequireNamedArgsAnalyzer() =
         context.RegisterSyntaxNodeAction(
             (fun c -> this.Analyze c),
             SyntaxKind.InvocationExpression, 
-            SyntaxKind.ObjectCreationExpression)
+            SyntaxKind.ObjectCreationExpression,
+            SyntaxKind.ImplicitObjectCreationExpression)
 
-
+    
     member private this.Analyze(context: SyntaxNodeAnalysisContext) =
         let invocationAnalyzerRes = InvocationAnalyzer.Create(context.SemanticModel, context.Node)
         if invocationAnalyzerRes.ShouldStopAnalysis

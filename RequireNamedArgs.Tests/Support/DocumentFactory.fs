@@ -44,7 +44,7 @@ module DocumentFactory =
 
         let parseOptions =
             if lang = Langs.CSharp
-            then CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.CSharp7_2) :> ParseOptions
+            then CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.CSharp9) :> ParseOptions
             else VisualBasicParseOptions.Default :> ParseOptions
                 
         let solution = (new AdhocWorkspace())

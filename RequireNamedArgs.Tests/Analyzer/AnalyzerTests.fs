@@ -203,4 +203,43 @@ module AnalyzerTests =
                                                                 fileName="Test0.cs", line=15u, column=36u)
 
                 [| expectedDiag |] |> ExpectDiags.toBeEmittedFrom testCodeSnippet
+            }
+            test "Constructor w/ [RequireNamedArgs] invoked implicitly w/ named args does not trigger diagnostic" {
+                ExpectDiags.emptyDiagnostics @"
+                    class Wombat
+                    {
+                        public string Name { get; }
+                        public int PowerLevel { get; }
+
+                        [RequireNamedArgs]
+                        public Wombat(string name, int powerLevel) => (Name, PowerLevel) = (name, powerLevel);
+
+                        public static Wombat Create()
+                        {
+                            return new(name: ""Goku"", powerLevel: 5000);
+                        }
+                    }
+                "
+            }
+            test "Constructor w/ [RequireNamedArgs] invoked implicitly w/ positional args triggers diagnostic" {
+                let testCodeSnippet = @"
+                    class Wombat
+                    {
+                        public string Name { get; }
+                        public int PowerLevel { get; }
+
+                        [RequireNamedArgs]
+                        public Wombat(string name, int powerLevel) => (Name, PowerLevel) = (name, powerLevel);
+
+                        public static Wombat Create()
+                        {
+                            return new(""Goku"", 5000);
+                        }
+                    }
+                "
+                let expectedDiag = RequireNamedArgsDiagResult.Create(invokedMethod=".ctor",
+                                                                paramNamesByType=[[ "line"; "column" ]],
+                                                                fileName="Test0.cs", line=15u, column=36u)
+
+                [| expectedDiag |] |> ExpectDiags.toBeEmittedFrom testCodeSnippet
             }]

@@ -105,33 +105,36 @@ type InvocationAnalyzer private(_sema: SemanticModel,
     /// we should stop analysis of the current expression.
     /// </returns>
     member this.GetArgsMissingNames(): Res<ArgWithParamSymbol[]> =
-            let argSyntaxes = _exprSyntax.GetArguments()
+        let argSyntaxes =
+            match _exprSyntax with
+            | :? ImplicitObjectCreationExpressionSyntax as it -> it.ArgumentList.Arguments
+            | _ -> _exprSyntax.GetArguments()
+            
+        if not (argSyntaxes.Any())
+        then
+            Ok NoArgsMissingNames 
+        else
 
-            if not (argSyntaxes.Any())
-            then
-                Ok NoArgsMissingNames 
-            else
+        let lastArgIndex = argSyntaxes.Count - 1
+        let lastParamInfoRes = _sema.GetParameterInfo(_methodSymbol, lastArgIndex, argSyntaxes.[lastArgIndex])
+        if lastParamInfoRes.ShouldStopAnalysis
+        then
+            StopAnalysis
+        else
+            
+        if lastParamInfoRes.Value.ParamSymbol.IsParams 
+        then
+            Ok NoArgsMissingNames 
+        else
 
-            let lastArgIndex = argSyntaxes.Count - 1
-            let lastParamInfoRes = _sema.GetParameterInfo(_methodSymbol, lastArgIndex, argSyntaxes.[lastArgIndex])
-            if lastParamInfoRes.ShouldStopAnalysis
-            then
-                StopAnalysis
-            else
-                
-            if lastParamInfoRes.Value.ParamSymbol.IsParams 
-            then
-                Ok NoArgsMissingNames 
-            else
-
-            let argWithParamSymbolsRes = zipArgSyntaxesWithParamSymbols argSyntaxes
-            if argWithParamSymbolsRes.ShouldStopAnalysis
-            then
-                StopAnalysis
-            else
-                
-            let argsMissingNames =
-                argWithParamSymbolsRes.Value
-                |> Array.filter (fun it -> isNull it.ArgSyntax.NameColon)
-                
-            Ok argsMissingNames
+        let argWithParamSymbolsRes = zipArgSyntaxesWithParamSymbols argSyntaxes
+        if argWithParamSymbolsRes.ShouldStopAnalysis
+        then
+            StopAnalysis
+        else
+            
+        let argsMissingNames =
+            argWithParamSymbolsRes.Value
+            |> Array.filter (fun it -> isNull it.ArgSyntax.NameColon)
+            
+        Ok argsMissingNames
