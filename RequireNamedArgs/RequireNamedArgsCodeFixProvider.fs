@@ -8,11 +8,11 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CodeActions
 open Microsoft.CodeAnalysis.CodeFixes
-open Microsoft.CodeAnalysis.CSharp
-open Microsoft.CodeAnalysis.CSharp.Syntax
 open FSharp.Control.Tasks.V2.ContextInsensitive
+open RequireNamedArgs.Analysis
 open RequireNamedArgs.Analyzer
-open RequireNamedArgs.Analysis.ParamInfo
+open RequireNamedArgs.Analysis.ArgumentSyntaxInfo
+open RequireNamedArgs.Analysis.ParamExtensions
 open RequireNamedArgs.Support
 
 
@@ -37,9 +37,9 @@ type public RequireNamedArgsCodeFixProvider() =
 
     override this.RegisterCodeFixesAsync(context) = (task {
         let! root = context.Document.GetSyntaxRootAsync(context.CancellationToken)
-        let diagnostic = context.Diagnostics |> Seq.head;
-        let diagnosticSpan = diagnostic.Location.SourceSpan;
-        let exprSyntax = root.FindNode(diagnosticSpan) :?> ExpressionSyntax;
+        let diagnostic = context.Diagnostics |> Seq.head
+        let diagnosticSpan = diagnostic.Location.SourceSpan
+        let syntaxNode = root.FindNode(diagnosticSpan)
 
         // Register a code action that will invoke the fix.
         context.RegisterCodeFix(
@@ -49,7 +49,7 @@ type public RequireNamedArgsCodeFixProvider() =
                     return! this.PrefixArgsWithNamesAsync(
                         context.Document, 
                         root,
-                        exprSyntax, 
+                        syntaxNode, 
                         cancellationToken) 
                 }, 
                 equivalenceKey = title),
@@ -60,37 +60,27 @@ type public RequireNamedArgsCodeFixProvider() =
 
     member private this.PrefixArgsWithNamesAsync(document: Document,
                                                  root: SyntaxNode,
-                                                 exprSyntax: ExpressionSyntax,
+                                                 syntaxNode: SyntaxNode,
                                                  cancellationToken: CancellationToken) = task {
         let! sema = document.GetSemanticModelAsync(cancellationToken)
 
         // As it's the named args code fix provider, 
         // the analyzer has already checked that it's OK to make these args named.
-        match exprSyntax.GetArgumentList() with
+        match syntaxNode.GetArgumentList() with
         | Some originalArgListSyntax ->
-            let exprSyntax = originalArgListSyntax.Parent  :?> ExpressionSyntax
-            let methodOrPropertySymbol = sema.GetSymbolInfo(exprSyntax).Symbol
+            let methodOrPropertySymbol = sema.GetSymbolInfo(originalArgListSyntax.Parent).Symbol
 
-            let withNameColon (argIndex: int) (argSyntax: ArgumentSyntax) =
+            let withNameColon (argIndex: int) (argSyntax: ArgumentSyntaxInfo) =
                 match sema.GetParameterInfo(methodOrPropertySymbol, argIndex, argSyntax) with
-                | Ok paramInfo ->
-                    argSyntax.WithNameColon(
-                        SyntaxFactory.NameColon(paramInfo.ParamSymbol.Name))
-                                     .WithTriviaFrom(argSyntax) // Preserve whitespaces, etc. from the original code.
-                | _ ->
-                    argSyntax
+                | Ok paramInfo -> argSyntax.WithNameColon(paramInfo) // Preserve whitespaces, etc. from the original code.
+                | _ -> argSyntax
 
             let namedArgSyntaxes = originalArgListSyntax.Arguments |> Seq.mapi withNameColon
-
-            let newArgListSyntax =
-                originalArgListSyntax.WithArguments(
-                    SyntaxFactory.SeparatedList(
-                        namedArgSyntaxes,
-                        originalArgListSyntax.Arguments.GetSeparators()))
+            let newArgListSyntax = originalArgListSyntax.WithArguments(namedArgSyntaxes)
             
             // An argument list is an "addressable" syntax element, that we can directly
             // replace in the document's root.
-            return document.WithSyntaxRoot(root.ReplaceNode(originalArgListSyntax, newArgListSyntax))
+            return document.WithSyntaxRoot(root.ReplaceNode(originalArgListSyntax.Syntax, newArgListSyntax.Syntax))
         | None ->
             return document
     }

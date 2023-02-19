@@ -51,7 +51,8 @@ type public RequireNamedArgsAnalyzer() =
             (fun c -> this.Analyze c),
             SyntaxKind.InvocationExpression, 
             SyntaxKind.ObjectCreationExpression,
-            SyntaxKind.ImplicitObjectCreationExpression)
+            SyntaxKind.ImplicitObjectCreationExpression,
+            SyntaxKind.Attribute)
 
     
     member private this.Analyze(context: SyntaxNodeAnalysisContext) =

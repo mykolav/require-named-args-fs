@@ -6,11 +6,12 @@ open Microsoft.CodeAnalysis.CSharp.Syntax
 open RequireNamedArgs.ArgumentAndParameter
 open RequireNamedArgs.Support
 open RequireNamedArgs.Support.CSharpAdapters
-open RequireNamedArgs.Analysis.ParamInfo
+open RequireNamedArgs.Analysis.ArgumentSyntaxInfo
+open RequireNamedArgs.Analysis.ParamExtensions
 
 
 type InvocationAnalyzer private(_sema: SemanticModel,
-                                _exprSyntax: ExpressionSyntax,
+                                _exprSyntax: SyntaxNode,
                                 _methodSymbol: IMethodSymbol) = 
 
 
@@ -32,7 +33,7 @@ type InvocationAnalyzer private(_sema: SemanticModel,
         |> Seq.exists (fun attrData -> attrData.AttributeClass.Name = "RequireNamedArgsAttribute")
         
         
-    let zipArgSyntaxesWithParamSymbols (argSyntaxes: SeparatedSyntaxList<ArgumentSyntax>)
+    let zipArgSyntaxesWithParamSymbols (argSyntaxes: ArgumentSyntaxInfo[])
                                        : Res<ArgWithParamSymbol[]> =
         let argWithParamInfos = 
             argSyntaxes 
@@ -57,17 +58,15 @@ type InvocationAnalyzer private(_sema: SemanticModel,
 
 
     static member Create(sema: SemanticModel, analyzedSyntaxNode: SyntaxNode): Res<InvocationAnalyzer> =
-        let analyzedExprSyntaxOpt = analyzedSyntaxNode |> asOptional<ExpressionSyntax>
-        if analyzedExprSyntaxOpt.IsNone
-        then
-            // If the supplied syntax node doesn't represent an expression,
-            // it cannot be an invocation.
-            // As a result we're not interested.
-            StopAnalysis
-        else
-            
-        let analyzedExprSyntax = analyzedExprSyntaxOpt.Value
-        let analyzedMethodSymbolOpt = sema.GetSymbolInfo(analyzedExprSyntax).Symbol |> asOptional<IMethodSymbol>
+        let analyzedMethodSymbolOpt =
+            match analyzedSyntaxNode with
+            | :? ExpressionSyntax as analyzedExprSyntax ->
+                 sema.GetSymbolInfo(analyzedExprSyntax).Symbol |> asOptional<IMethodSymbol>
+            | :? AttributeSyntax as analyzedAttrSyntax ->
+                sema.GetSymbolInfo(analyzedAttrSyntax).Symbol |> asOptional<IMethodSymbol>
+            | _ ->
+                None
+
         if analyzedMethodSymbolOpt.IsNone
         then
             // If the symbol that corresponds to the supplied expression syntax is not a method symbol,
@@ -75,7 +74,6 @@ type InvocationAnalyzer private(_sema: SemanticModel,
             // As a result we're not interested.
             StopAnalysis
         else
-            
         
         let analyzedMethodSymbol = analyzedMethodSymbolOpt.Value
         if not (isSupportedMethodKind analyzedMethodSymbol &&
@@ -88,7 +86,7 @@ type InvocationAnalyzer private(_sema: SemanticModel,
         else
             
         // OK, we're ready to analyze this method invocation/object creation.
-        Ok (InvocationAnalyzer(sema, analyzedExprSyntax, analyzedMethodSymbol))
+        Ok (InvocationAnalyzer(sema, analyzedSyntaxNode, analyzedMethodSymbol))
         
         
     member this.MethodName: string = _methodSymbol.Name    
@@ -105,18 +103,15 @@ type InvocationAnalyzer private(_sema: SemanticModel,
     /// we should stop analysis of the current expression.
     /// </returns>
     member this.GetArgsMissingNames(): Res<ArgWithParamSymbol[]> =
-        let argSyntaxes =
-            match _exprSyntax with
-            | :? ImplicitObjectCreationExpressionSyntax as it -> it.ArgumentList.Arguments
-            | _ -> _exprSyntax.GetArguments()
+        let argSyntaxes = _exprSyntax.GetArguments()
             
-        if not (argSyntaxes.Any())
+        if argSyntaxes.Length = 0
         then
             Ok NoArgsMissingNames 
         else
 
-        let lastArgIndex = argSyntaxes.Count - 1
-        let lastParamInfoRes = _sema.GetParameterInfo(_methodSymbol, lastArgIndex, argSyntaxes.[lastArgIndex])
+        let lastArgIndex = argSyntaxes.Length - 1
+        let lastParamInfoRes = _sema.GetParameterInfo(_methodSymbol, lastArgIndex, argSyntaxes[lastArgIndex])
         if lastParamInfoRes.ShouldStopAnalysis
         then
             StopAnalysis

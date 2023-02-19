@@ -1,10 +1,10 @@
 ﻿module RequireNamedArgs.ArgumentAndParameter
 
 
-open Microsoft.CodeAnalysis.CSharp.Syntax
 open Microsoft.CodeAnalysis
+open RequireNamedArgs.Analysis
 
 
 type ArgWithParamSymbol = {
-    ArgSyntax: ArgumentSyntax;
+    ArgSyntax: ArgumentSyntaxInfo;
     ParamSymbol: IParameterSymbol }

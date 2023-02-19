@@ -11,6 +11,8 @@
     <Compile Include="Support\CSharpAdapters.fs" />
     <Compile Include="Support\Res.fs" />
     <Compile Include="Analysis\ParamInfo.fs" />
+    <Compile Include="Analysis\ArgumentSyntaxInfo.fs" />
+    <Compile Include="Analysis\ParamExtensiosn.fs" />
     <Compile Include="Analysis\ArgumentAndParameter.fs" />
     <Compile Include="Analysis\InvocationAnalyzer.fs" />
     <Compile Include="RequireNamedArgsAnalyzer.fs" />

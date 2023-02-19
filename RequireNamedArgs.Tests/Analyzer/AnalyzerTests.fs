@@ -65,7 +65,7 @@ module AnalyzerTests =
                     void Bork() { TellPowerLevel(name: ""Goku"", powerLevel: 9001); }
                 ")
             }
-            test "Method w/ [RequireNamedArgs] invoked w/ positional args triggers diagnostic" {
+            test "Method w/ [RequireNamedArgs] invoked w/ positional args triggers the diagnostic" {
                 let testCodeSnippet = (Format.klass @"
                     [RequireNamedArgs]
                     void TellPowerLevel(string name, int powerLevel) {}
@@ -78,7 +78,7 @@ module AnalyzerTests =
 
                 [|expectedDiag|] |> ExpectDiags.toBeEmittedFrom testCodeSnippet
             }
-            test "Method w/ [RequireNamedArgs] attribute invoked w/ positional args triggers diagnostic" {
+            test "Method w/ [RequireNamedArgs] attribute invoked w/ positional args triggers the diagnostic" {
                 let testCodeSnippet = (Format.klass @"
                     [RequireNamedArgs]
                     void TellPowerLevel(string name, int powerLevel) {}
@@ -91,7 +91,7 @@ module AnalyzerTests =
 
                 [|expectedDiag|] |> ExpectDiags.toBeEmittedFrom testCodeSnippet
             }
-            test "Static method w/ [RequireNamedArgs] invoked w/ positional args triggers diagnostic" {
+            test "Static method w/ [RequireNamedArgs] invoked w/ positional args triggers the diagnostic" {
                 let testCodeSnippet = (Format.klass @"
                     [RequireNamedArgs]
                     static void TellPowerLevel(string name, int powerLevel) {}
@@ -104,7 +104,7 @@ module AnalyzerTests =
 
                 [|expectedDiag|] |> ExpectDiags.toBeEmittedFrom testCodeSnippet
             }
-            test "Private static method w/ [RequireNamedArgs] invoked w/ positional args triggers diagnostic" {
+            test "Private static method w/ [RequireNamedArgs] invoked w/ positional args triggers the diagnostic" {
                 let testCodeSnippet = (Format.klass @"
                     [RequireNamedArgs]
                     private static void TellPowerLevel(string name, int powerLevel) {}
@@ -118,7 +118,7 @@ module AnalyzerTests =
                 [|expectedDiag|] |> ExpectDiags.toBeEmittedFrom testCodeSnippet
             }
             // See https://github.com/mykolav/require-named-args-fs/issues/1
-            test "Extension method w/o [RequireNamedArgs] does not triggers diagnostic" {
+            test "Extension method w/o [RequireNamedArgs] does not triggers the diagnostic" {
                 ExpectDiags.emptyDiagnostics @"
                     static class PowerLevelExtensions
                     {
@@ -131,7 +131,7 @@ module AnalyzerTests =
                     }
                 "
             }
-            test "Extension method  w/ [RequireNamedArgs] invoked w/ named args does not trigger diagnostic" {
+            test "Extension method  w/ [RequireNamedArgs] invoked w/ named args does not trigger the diagnostic" {
                 ExpectDiags.emptyDiagnostics @"
                     static class PowerLevelExtensions
                     {
@@ -145,7 +145,7 @@ module AnalyzerTests =
                     }
                 "
             }
-            test "Extension method w/ [RequireNamedArgs] invoked w/ positional args triggers diagnostic" {
+            test "Extension method w/ [RequireNamedArgs] invoked w/ positional args triggers the diagnostic" {
                 let testCodeSnippet = @"
                     static class PowerLevelExtensions
                     {
@@ -165,7 +165,7 @@ module AnalyzerTests =
 
                 [| expectedDiag |] |> ExpectDiags.toBeEmittedFrom testCodeSnippet
             }
-            test "Constructor w/ [RequireNamedArgs] invoked w/ named args does not trigger diagnostic" {
+            test "Constructor w/ [RequireNamedArgs] invoked w/ named args does not trigger the diagnostic" {
                 ExpectDiags.emptyDiagnostics @"
                     class Wombat
                     {
@@ -182,7 +182,7 @@ module AnalyzerTests =
                     }
                 "
             }
-            test "Constructor w/ [RequireNamedArgs] invoked w/ positional args triggers diagnostic" {
+            test "Constructor w/ [RequireNamedArgs] invoked w/ positional args triggers the diagnostic" {
                 let testCodeSnippet = @"
                     class Wombat
                     {
@@ -204,7 +204,7 @@ module AnalyzerTests =
 
                 [| expectedDiag |] |> ExpectDiags.toBeEmittedFrom testCodeSnippet
             }
-            test "Constructor w/ [RequireNamedArgs] invoked implicitly w/ named args does not trigger diagnostic" {
+            test "Constructor w/ [RequireNamedArgs] invoked implicitly w/ named args does not trigger the diagnostic" {
                 ExpectDiags.emptyDiagnostics @"
                     class Wombat
                     {
@@ -221,7 +221,7 @@ module AnalyzerTests =
                     }
                 "
             }
-            test "Constructor w/ [RequireNamedArgs] invoked implicitly w/ positional args triggers diagnostic" {
+            test "Constructor w/ [RequireNamedArgs] invoked implicitly w/ positional args triggers the diagnostic" {
                 let testCodeSnippet = @"
                     class Wombat
                     {
@@ -242,4 +242,50 @@ module AnalyzerTests =
                                                                 fileName="Test0.cs", line=15u, column=36u)
 
                 [| expectedDiag |] |> ExpectDiags.toBeEmittedFrom testCodeSnippet
-            }]
+            }
+            test "Attribute constructor w/ [RequireNamedArgs] invoked w/ named args does not trigger the diagnostic" {
+                ExpectDiags.emptyDiagnostics @"
+                    [PowerLevel(name: ""Goku"", powerLevel: 9001)]
+                    class Goku { }
+                    
+                    [AttributeUsage(AttributeTargets.Class)]
+                    public sealed class PowerLevelAttribute : Attribute
+                    {
+                        public string Name { get; }
+                        public int PowerLevel { get; }
+
+                        [RequireNamedArgs]
+                        public PowerLevelAttribute(string name, int powerLevel)
+                        {
+                            Name = name;
+                            PowerLevel = powerLevel;
+                        }
+                    }   
+                "
+            }
+            test "Attribute constructor w/ [RequireNamedArgs] invoked w/ positional args triggers the diagnostic" {
+                let testCodeSnippet = @"
+                    [PowerLevel(""Goku"", 9001)]
+                    class Goku { }
+                    
+                    [AttributeUsage(AttributeTargets.Class)]
+                    public sealed class PowerLevelAttribute : Attribute
+                    {
+                        public string Name { get; }
+                        public int PowerLevel { get; }
+
+                        [RequireNamedArgs]
+                        public PowerLevelAttribute(string name, int powerLevel)
+                        {
+                            Name = name;
+                            PowerLevel = powerLevel;
+                        }
+                    }   
+                "
+                let expectedDiag = RequireNamedArgsDiagResult.Create(invokedMethod=".ctor",
+                                                                paramNamesByType=[[ "line"; "column" ]],
+                                                                fileName="Test0.cs", line=5u, column=22u)
+
+                [| expectedDiag |] |> ExpectDiags.toBeEmittedFrom testCodeSnippet
+            }
+        ]

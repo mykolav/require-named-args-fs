@@ -207,4 +207,45 @@ module CodeFixProviderTests =
 
                     originalSnippet |> ExpectCode.snippetToBeFixedAndMatch expectedFixedSnippet
                 }]
-            ]
+            testList "Attribute constructor w/ [RequireNamedArgs]" [
+                test "Invocation w/ positional args is fixed to named args" {
+                    let originalSnippet = @"
+                        [PowerLevel(""Goku"", 9001)]
+                        class Goku { }
+                    
+                        [AttributeUsage(AttributeTargets.Class)]
+                        public sealed class PowerLevelAttribute : Attribute
+                        {
+                            public string Name { get; }
+                            public int PowerLevel { get; }
+
+                            [RequireNamedArgs]
+                            public PowerLevelAttribute(string name, int powerLevel)
+                            {
+                                Name = name;
+                                PowerLevel = powerLevel;
+                            }
+                        }   
+                    "
+                    let expectedFixedSnippet = @"
+                        [PowerLevel(name: ""Goku"", powerLevel: 9001)]
+                        class Goku { }
+                    
+                        [AttributeUsage(AttributeTargets.Class)]
+                        public sealed class PowerLevelAttribute : Attribute
+                        {
+                            public string Name { get; }
+                            public int PowerLevel { get; }
+
+                            [RequireNamedArgs]
+                            public PowerLevelAttribute(string name, int powerLevel)
+                            {
+                                Name = name;
+                                PowerLevel = powerLevel;
+                            }
+                        }   
+                    "
+
+                    originalSnippet |> ExpectCode.snippetToBeFixedAndMatch expectedFixedSnippet
+                }]
+        ]
