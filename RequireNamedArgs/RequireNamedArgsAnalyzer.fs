@@ -44,6 +44,11 @@ type public RequireNamedArgsAnalyzer() =
 
 
     override this.Initialize (context: AnalysisContext) =
+        // We don't want to require named args in generated code.
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None)
+        // We can handle concurrent invocations.
+        context.EnableConcurrentExecution()
+        
         // Register ourself to get invoked to analyze 
         //   - invocation expressions; e. g., calling a method. 
         //   - and object creation expressions; e. g., invoking a constructor.

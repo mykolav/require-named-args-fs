@@ -13,7 +13,12 @@
     <copyright>Copyright © Mykola Musiienko 2023</copyright>
     <tags>roslyn roslyn-analyzer</tags>
     <repository url="https://github.com/mykolav/require-named-args-fs" />
-    <releaseNotes>Added support for the implicit object creation syntax and an attribute's constructors</releaseNotes>  
+    <releaseNotes>
+        - Added support for the implicit object creation syntax; 
+        - Added support for an attribute's constructors; 
+        - Enabled concurrent execution;
+        - Explicitly disabled generated code analysis.
+    </releaseNotes>  
 
   <dependencies>
     <group>
