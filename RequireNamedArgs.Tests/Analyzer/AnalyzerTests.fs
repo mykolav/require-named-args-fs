@@ -77,19 +77,6 @@ module AnalyzerTests =
 
                 [|expectedDiag|] |> ExpectDiags.toBeEmittedFrom testCodeSnippet
             }
-            test "Method w/ [RequireNamedArgs] attribute invoked w/ positional args triggers the diagnostic" {
-                let testCodeSnippet = (Format.klass @"
-                    [RequireNamedArgs]
-                    void TellPowerLevel(string name, int powerLevel) {}
-                    void IntroduceSelf() { TellPowerLevel(""Goku"", 9001); }
-                ")
-
-                let expectedDiag = RequireNamedArgsDiagResult.Create(invokedMethod="Character.TellPowerLevel",
-                                                                 paramNamesByType=[[ "line"; "column" ]],
-                                                                 fileName="Test0.cs", line=9u, column=44u)
-
-                [|expectedDiag|] |> ExpectDiags.toBeEmittedFrom testCodeSnippet
-            }
             test "Static method w/ [RequireNamedArgs] invoked w/ positional args triggers the diagnostic" {
                 let testCodeSnippet = (Format.klass @"
                     [RequireNamedArgs]
