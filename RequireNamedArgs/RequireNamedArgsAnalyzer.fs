@@ -15,7 +15,7 @@ module DiagnosticDescriptors =
         DiagnosticDescriptor(
             id="RequireNamedArgs",
             title="A [RequireNamedArgs] method invoked with positional arguments",
-            messageFormat="The method `{0}` must be invoked with named arguments",
+            messageFormat="`{0}` must be invoked with named arguments",
             category="Code style",
             defaultSeverity=DiagnosticSeverity.Error,
             isEnabledByDefault=true,
