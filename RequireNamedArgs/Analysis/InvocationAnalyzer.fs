@@ -127,7 +127,7 @@ type InvocationAnalyzer private(_sema: SemanticModel,
         Ok (InvocationAnalyzer(sema, analyzedSyntaxNode, analyzedMethodSymbol))
         
         
-    member this.MethodName: string = _methodSymbol.Name    
+    member this.MethodName: string = sprintf "%s.%s"_methodSymbol.ContainingType.Name _methodSymbol.Name
 
 
     /// <summary>
