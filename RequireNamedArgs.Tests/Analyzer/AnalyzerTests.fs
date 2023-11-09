@@ -71,7 +71,7 @@ module AnalyzerTests =
                     void Bork() { TellPowerLevel(""Goku"", 9001); }
                 ")
 
-                let expectedDiag = RequireNamedArgsDiagResult.Create(invokedMethod="TellPowerLevel",
+                let expectedDiag = RequireNamedArgsDiagResult.Create(invokedMethod="Wombat.TellPowerLevel",
                                                                  paramNamesByType=[[ "line"; "column" ]],
                                                                  fileName="Test0.cs", line=9u, column=35u)
 
@@ -84,7 +84,7 @@ module AnalyzerTests =
                     void Bork() { TellPowerLevel(""Goku"", 9001); }
                 ")
 
-                let expectedDiag = RequireNamedArgsDiagResult.Create(invokedMethod="TellPowerLevel",
+                let expectedDiag = RequireNamedArgsDiagResult.Create(invokedMethod="Wombat.TellPowerLevel",
                                                                  paramNamesByType=[[ "line"; "column" ]],
                                                                  fileName="Test0.cs", line=9u, column=35u)
 
@@ -97,7 +97,7 @@ module AnalyzerTests =
                     void Bork() { TellPowerLevel(""Goku"", 9001); }
                 ")
 
-                let expectedDiag = RequireNamedArgsDiagResult.Create(invokedMethod="TellPowerLevel",
+                let expectedDiag = RequireNamedArgsDiagResult.Create(invokedMethod="Wombat.TellPowerLevel",
                                                                  paramNamesByType=[[ "line"; "column" ]],
                                                                  fileName="Test0.cs", line=9u, column=35u)
 
@@ -110,7 +110,7 @@ module AnalyzerTests =
                     void Bork() { TellPowerLevel(""Goku"", 9001); }
                 ")
 
-                let expectedDiag = RequireNamedArgsDiagResult.Create(invokedMethod="TellPowerLevel",
+                let expectedDiag = RequireNamedArgsDiagResult.Create(invokedMethod="Wombat.TellPowerLevel",
                                                                  paramNamesByType=[[ "line"; "column" ]],
                                                                  fileName="Test0.cs", line=9u, column=35u)
 
@@ -158,7 +158,7 @@ module AnalyzerTests =
                     }
                 "
 
-                let expectedDiag = RequireNamedArgsDiagResult.Create(invokedMethod="SwitchPowerLevel",
+                let expectedDiag = RequireNamedArgsDiagResult.Create(invokedMethod="PowerLevelExtensions.SwitchPowerLevel",
                                                                  paramNamesByType=[[ "line"; "column" ]],
                                                                  fileName="Test0.cs", line=13u, column=39u)
 
@@ -197,7 +197,7 @@ module AnalyzerTests =
                         }
                     }
                 "
-                let expectedDiag = RequireNamedArgsDiagResult.Create(invokedMethod=".ctor",
+                let expectedDiag = RequireNamedArgsDiagResult.Create(invokedMethod="Wombat..ctor",
                                                                 paramNamesByType=[[ "line"; "column" ]],
                                                                 fileName="Test0.cs", line=15u, column=36u)
 
@@ -236,7 +236,7 @@ module AnalyzerTests =
                         }
                     }
                 "
-                let expectedDiag = RequireNamedArgsDiagResult.Create(invokedMethod=".ctor",
+                let expectedDiag = RequireNamedArgsDiagResult.Create(invokedMethod="Wombat..ctor",
                                                                 paramNamesByType=[[ "line"; "column" ]],
                                                                 fileName="Test0.cs", line=15u, column=36u)
 
@@ -281,7 +281,7 @@ module AnalyzerTests =
                         }
                     }   
                 "
-                let expectedDiag = RequireNamedArgsDiagResult.Create(invokedMethod=".ctor",
+                let expectedDiag = RequireNamedArgsDiagResult.Create(invokedMethod="PowerLevelAttribute..ctor",
                                                                 paramNamesByType=[[ "line"; "column" ]],
                                                                 fileName="Test0.cs", line=5u, column=22u)
 
@@ -310,7 +310,7 @@ module AnalyzerTests =
                         }
                     }
                 "
-                let expectedDiag = RequireNamedArgsDiagResult.Create(invokedMethod=".ctor",
+                let expectedDiag = RequireNamedArgsDiagResult.Create(invokedMethod="Wombat..ctor",
                                                                 paramNamesByType=[[ "line"; "column" ]],
                                                                 fileName="Test0.cs", line=10u, column=36u)
 
