@@ -206,6 +206,22 @@ module CodeFixProviderTests =
                     "
 
                     originalSnippet |> ExpectCode.snippetToBeFixedAndMatch expectedFixedSnippet
+                }
+                test "Implicit invocation w/ positional args is fixed to named args" {
+                    let originalSnippet = @"
+                        [RequireNamedArgs]
+                        public Wombat(string name, int powerLevel) {}
+
+                        public static Wombat Create() => new (""Goku"", 5000);
+                    "
+                    let expectedFixedSnippet = @"
+                        [RequireNamedArgs]
+                        public Wombat(string name, int powerLevel) {}
+
+                        public static Wombat Create() => new (name: ""Goku"", powerLevel: 5000);
+                    "
+
+                    originalSnippet |> ExpectCode.snippetToBeFixedAndMatch expectedFixedSnippet
                 }]
             testList "Attribute constructor w/ [RequireNamedArgs]" [
                 test "Invocation w/ positional args is fixed to named args" {
