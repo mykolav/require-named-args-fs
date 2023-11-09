@@ -32,7 +32,6 @@ module AnalyzerTests =
     // TODO:   Indexer. class C { int this[int arg1, int arg2] => this[1, 2]; }
     // TODO:   `this` ctor initializer. class C { C(int arg1, int arg2) {} C() : this(1, 2) {} }
     // TODO:   `base` ctor initializer. class C { public C(int arg1, int arg2) {} } class D : C { D() : base(1, 2) {} }
-    // TODO:   Attribute's parameters and properties?
     [<Tests>]
     let analyzerTests = 
         testList "The RequireNamedArgs analyzer tests" [
@@ -285,6 +284,35 @@ module AnalyzerTests =
                 let expectedDiag = RequireNamedArgsDiagResult.Create(invokedMethod=".ctor",
                                                                 paramNamesByType=[[ "line"; "column" ]],
                                                                 fileName="Test0.cs", line=5u, column=22u)
+
+                [| expectedDiag |] |> ExpectDiags.toBeEmittedFrom testCodeSnippet
+            }
+            test "Record constructor w/ [RequireNamedArgs] invoked w/ named args does not trigger the diagnostic" {
+                ExpectDiags.emptyDiagnostics @"
+                    [RequireNamedArgs]
+                    record Wombat(string Name, int PowerLevel)
+                    {
+                        public static Wombat Create()
+                        {
+                            return new Wombat(Name: ""Goku"", PowerLevel: 5000);
+                        }
+                    }
+                "
+            }
+            test "Record constructor w/ [RequireNamedArgs] invoked w/ positional args triggers the diagnostic" {
+                let testCodeSnippet = @"
+                    [RequireNamedArgs]
+                    record Wombat(string Name, int PowerLevel)
+                    {
+                        public static Wombat Create()
+                        {
+                            return new Wombat(""Goku"", 5000);
+                        }
+                    }
+                "
+                let expectedDiag = RequireNamedArgsDiagResult.Create(invokedMethod=".ctor",
+                                                                paramNamesByType=[[ "line"; "column" ]],
+                                                                fileName="Test0.cs", line=10u, column=36u)
 
                 [| expectedDiag |] |> ExpectDiags.toBeEmittedFrom testCodeSnippet
             }

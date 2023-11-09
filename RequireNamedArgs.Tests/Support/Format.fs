@@ -20,7 +20,7 @@ namespace RequireNamedArgs.Tests.Support
                 {
                     %s
                     
-                    [AttributeUsage(AttributeTargets.Constructor | AttributeTargets.Method)]
+                    [AttributeUsage(AttributeTargets.Constructor | AttributeTargets.Method | AttributeTargets.Class | AttributeTargets.Struct)]
                     class RequireNamedArgsAttribute : Attribute {}
                     
                     class Program { static void Main(string[] args) {} }

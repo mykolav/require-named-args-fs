@@ -248,4 +248,23 @@ module CodeFixProviderTests =
 
                     originalSnippet |> ExpectCode.snippetToBeFixedAndMatch expectedFixedSnippet
                 }]
+            testList "Record w/ [RequireNamedArgs]" [
+                test "Primary constructor invocation w/ positional args is fixed to named args" {
+                    let originalSnippet = @"
+                        [RequireNamedArgs]
+                        record CharacterRecord(string Name, int PowerLevel)
+                        {
+                            public static CharacterRecord CreateGoku() => new CharacterRecord(""Goku"", 9001);
+                        }
+                    "
+                    let expectedFixedSnippet = @"
+                        [RequireNamedArgs]
+                        record CharacterRecord(string Name, int PowerLevel)
+                        {
+                            public static CharacterRecord CreateGoku() => new CharacterRecord(Name: ""Goku"", PowerLevel: 9001);
+                        }
+                    "
+
+                    originalSnippet |> ExpectCode.snippetToBeFixedAndMatch expectedFixedSnippet
+                }]
         ]

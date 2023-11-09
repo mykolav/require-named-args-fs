@@ -28,10 +28,48 @@ type InvocationAnalyzer private(_sema: SemanticModel,
         | _                           -> false
 
 
-    static let hasRequireNamedArgsAttribute (methodSymbol: IMethodSymbol): bool =
-        methodSymbol.GetAttributes()
+    static let symbolHasRequireNamedArgsAttribute (symbol: ISymbol): bool =
+        symbol.GetAttributes()
         |> Seq.exists (fun attrData -> attrData.AttributeClass.Name = "RequireNamedArgsAttribute")
-        
+
+
+    static let methodSymbolHasRequireNamedArgsAttribute (methodSymbol: IMethodSymbol): bool =
+        if symbolHasRequireNamedArgsAttribute methodSymbol
+        then
+            // If the method has been marked with the attribute, we're done.
+            true
+        else
+
+        // The method has not been marked with the attribute.
+        // See if the method is a primary constructor.
+        // In case it is, we're going to check if the type itself has been marked with the attribute,
+        // as currently there is no way in C# to specify
+        // an attribute should apply to a type's primary constructor.
+
+        if methodSymbol.MethodKind <> MethodKind.Constructor
+        then
+            // Captain Obvious tells me, if it's not a constructor,
+            // it cannot be a primary constructor.
+            false
+        else
+
+        // Just to be on the safe side, let's check `methodSymbol` has some declaring syntaxes.
+        if methodSymbol.DeclaringSyntaxReferences.Length = 0
+        then
+            false
+        else
+
+        // The declaring syntax of a primary constructor is its type declaration.
+        match methodSymbol.DeclaringSyntaxReferences[0].GetSyntax() with
+        | :? RecordDeclarationSyntax
+        // The following two cover C# 12's class/struct primary constructors
+        | :? ClassDeclarationSyntax
+        | :? StructDeclarationSyntax ->
+            // The type declaration syntax corresponds to the primary constructor's containing type.
+            // See if the method's containing type has been marked with the attribute.
+            symbolHasRequireNamedArgsAttribute methodSymbol.ContainingType
+        | _ -> false
+
         
     let zipArgSyntaxesWithParamSymbols (argSyntaxes: ArgumentSyntaxInfo[])
                                        : Res<ArgWithParamSymbol[]> =
@@ -77,7 +115,7 @@ type InvocationAnalyzer private(_sema: SemanticModel,
         
         let analyzedMethodSymbol = analyzedMethodSymbolOpt.Value
         if not (isSupportedMethodKind analyzedMethodSymbol &&
-                hasRequireNamedArgsAttribute analyzedMethodSymbol)
+                methodSymbolHasRequireNamedArgsAttribute analyzedMethodSymbol)
         then
             // It is an invocation, but
             // - we don't supported analyzing invocations of methods of this kind
