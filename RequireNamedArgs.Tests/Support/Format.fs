@@ -7,7 +7,7 @@ namespace RequireNamedArgs.Tests.Support
 
         let klass (source: string) =
             sprintf
-                "class Wombat
+                "class Character
                 {
                     %s
                 }" source
@@ -16,7 +16,7 @@ namespace RequireNamedArgs.Tests.Support
         let program (source: string) =
             sprintf
                 "using System;
-                namespace Frobnitz
+                namespace DragonBall
                 {
                     %s
                     

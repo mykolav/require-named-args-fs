@@ -165,27 +165,27 @@ module CodeFixProviderTests =
             testList "extension [RequireNamedArgs] method" [
                 test "Invocation w/ positional args is fixed to named args" {
                     let originalSource = Format.program @"
-                        class Wombat {}
+                        class Character {}
 
-                        static class WombatExtensions
+                        static class CharacterExtensions
                         {
                             [RequireNamedArgs]
-                            public static void SwitchPowerLevel(this Wombat wombat, Action onOver9000, Action onUnderOrAt9000) {}
+                            public static void SwitchPowerLevel(this Character character, Action onOver9000, Action onUnderOrAt9000) {}
                         }
 
-                        class Test { static void Run() { new Wombat().SwitchPowerLevel(() => {}, () => {}); } }
+                        class Test { static void Run() { new Character().SwitchPowerLevel(() => {}, () => {}); } }
                     "
 
                     let expectedFixedSource = Format.program @"
-                        class Wombat {}
+                        class Character {}
 
-                        static class WombatExtensions
+                        static class CharacterExtensions
                         {
                             [RequireNamedArgs]
-                            public static void SwitchPowerLevel(this Wombat wombat, Action onOver9000, Action onUnderOrAt9000) {}
+                            public static void SwitchPowerLevel(this Character character, Action onOver9000, Action onUnderOrAt9000) {}
                         }
 
-                        class Test { static void Run() { new Wombat().SwitchPowerLevel(onOver9000: () => {}, onUnderOrAt9000: () => {}); } }
+                        class Test { static void Run() { new Character().SwitchPowerLevel(onOver9000: () => {}, onUnderOrAt9000: () => {}); } }
                     "
 
                     originalSource |> ExpectCode.toBeFixedAndMatch expectedFixedSource
@@ -194,15 +194,15 @@ module CodeFixProviderTests =
                 test "Invocation w/ positional args is fixed to named args" {
                     let originalSnippet = @"
                         [RequireNamedArgs]
-                        public Wombat(string name, int powerLevel) {}
+                        public Character(string name, int powerLevel) {}
 
-                        public static Wombat Create() => new Wombat(""Goku"", 5000);
+                        public static Character Create() => new Character(""Goku"", 5000);
                     "
                     let expectedFixedSnippet = @"
                         [RequireNamedArgs]
-                        public Wombat(string name, int powerLevel) {}
+                        public Character(string name, int powerLevel) {}
 
-                        public static Wombat Create() => new Wombat(name: ""Goku"", powerLevel: 5000);
+                        public static Character Create() => new Character(name: ""Goku"", powerLevel: 5000);
                     "
 
                     originalSnippet |> ExpectCode.snippetToBeFixedAndMatch expectedFixedSnippet
@@ -210,15 +210,15 @@ module CodeFixProviderTests =
                 test "Implicit invocation w/ positional args is fixed to named args" {
                     let originalSnippet = @"
                         [RequireNamedArgs]
-                        public Wombat(string name, int powerLevel) {}
+                        public Character(string name, int powerLevel) {}
 
-                        public static Wombat Create() => new (""Goku"", 5000);
+                        public static Character Create() => new (""Goku"", 5000);
                     "
                     let expectedFixedSnippet = @"
                         [RequireNamedArgs]
-                        public Wombat(string name, int powerLevel) {}
+                        public Character(string name, int powerLevel) {}
 
-                        public static Wombat Create() => new (name: ""Goku"", powerLevel: 5000);
+                        public static Character Create() => new (name: ""Goku"", powerLevel: 5000);
                     "
 
                     originalSnippet |> ExpectCode.snippetToBeFixedAndMatch expectedFixedSnippet
