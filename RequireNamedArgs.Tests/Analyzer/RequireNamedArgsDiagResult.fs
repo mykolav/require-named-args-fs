@@ -25,10 +25,10 @@ type RequireNamedArgsDiagResult() =
             " and "
         paramNamesByType |> Seq.fold describeParamGroup "" |> ignore
         let paramsDescr = sbParamsDescr.ToString()
-        let message = String.Format(RequireNamedArgsAnalyzer.MessageFormat, 
+        let message = String.Format(DiagnosticDescriptors.NamedArgumentsRequired.MessageFormat.ToString(),
                                     invokedMethod, 
                                     paramsDescr)
-        let diagResult = DiagResult(id       = RequireNamedArgsAnalyzer.DiagnosticId,
+        let diagResult = DiagResult(id       = DiagnosticDescriptors.NamedArgumentsRequired.Id,
                                     message  = message,
                                     severity = DiagnosticSeverity.Error,
                                     location = {Path=fileName; Line=line; Col=column})

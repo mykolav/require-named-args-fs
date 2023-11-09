@@ -27,7 +27,7 @@ type public RequireNamedArgsCodeFixProvider() =
 
     // This tells the infrastructure that this code-fix provider corresponds to
     // the `RequireNamedArgsAnalyzer` analyzer.
-    override val FixableDiagnosticIds = ImmutableArray.Create(RequireNamedArgsAnalyzer.DiagnosticId)
+    override val FixableDiagnosticIds = ImmutableArray.Create(DiagnosticDescriptors.NamedArgumentsRequired.Id)
 
 
     // See https://github.com/dotnet/roslyn/blob/master/docs/analyzers/FixAllProvider.md 
