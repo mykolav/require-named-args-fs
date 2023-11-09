@@ -133,8 +133,8 @@ This will download all the binaries, and add necessary analyzer references to yo
 2. Introduce `RequireNamedArgsAttribute` attribute to your solution.  
    I. e., create your own  
    ```csharp
-   [AttributeUsage(AttributeTargets.Method | AttributeTargets.Constructor)]
-   public class RequireNamedArgsAttribute : Attribute { }
+   [AttributeUsage(AttributeTargets.Constructor | AttributeTargets.Method | AttributeTargets.Class | AttributeTargets.Struct)]
+   class RequireNamedArgsAttribute : Attribute {}
    ```
 3. Mark methods which should only be invoked with named arguments with a `[RequireNamedArgs]` attribute.   
 
@@ -147,6 +147,30 @@ public static void TellPowerLevel(string name, int powerLevel) {}
 // if `TellPowerLevel` method is called with positional arguments,
 // the analyzer will emit an error.
 TellPowerLevel(name: "Goku", powerLevel: 9001);
+```
+
+### Supported method kinds
+
+The analyzer supports requiring named arguments for the following method kinds  
+- Regular instance and static methods
+- Extension methods
+- Regular constructors
+- Attribute constructors
+- Primary constructors 
+
+To mark a record's primary constructor, apply `[RequireNamedArgs]` to the record itself.
+```csharp
+[RequireNamedArgs]
+record Character(string Name, int PowerLevel) {}
+
+[RequireNamedArgs]
+record struct CharacterStruct(string Name, int PowerLevel) {}
+
+// Elsewhere in your code:
+// if the primary constructor of `Character` or `CharacterStruct` is called with positional arguments,
+// the analyzer will emit an error.
+new Character(Name: "Goku", PowerLevel: 9001);
+new CharacterStruct(Name: "Goku", PowerLevel: 9001);
 ```
 
 ## Configuration
