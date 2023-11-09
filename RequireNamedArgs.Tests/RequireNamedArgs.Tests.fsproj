@@ -22,9 +22,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Expecto" Version="8.2.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.10.0-release-20210330-02" />
-    <PackageReference Include="YoloDev.Expecto.TestSdk" Version="0.5.0" />
+    <PackageReference Include="Expecto" Version="10.1.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.11.0" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -33,10 +32,6 @@
   
   <ItemGroup>
     <ProjectReference Include="..\RequireNamedArgs\RequireNamedArgs.fsproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Update="FSharp.Core" Version="4.5.2" />
   </ItemGroup>
 
 </Project>
