@@ -39,11 +39,9 @@ configuration: Release
 before_build:
   - nuget restore
 
-# to run your custom scripts instead of automatic MSBuild
 build:
   project: require-named-args-fs.sln
   parallel: true
-  publish_nuget: true
 
 # AppVeyor's Tests Window is empty?
 # See https://stackoverflow.com/a/53309039/818321
