@@ -8,13 +8,11 @@
 
   <ItemGroup>
     <Compile Include="Support\TaskBuilder.fs" />
-    <Compile Include="Support\CSharpAdapters.fs" />
-    <Compile Include="Support\Res.fs" />
-    <Compile Include="Analysis\ParamInfo.fs" />
-    <Compile Include="Analysis\ArgumentSyntaxInfo.fs" />
-    <Compile Include="Analysis\ParamExtensiosn.fs" />
-    <Compile Include="Analysis\ArgumentAndParameter.fs" />
-    <Compile Include="Analysis\InvocationAnalyzer.fs" />
+    <Compile Include="Support\AnalysisResult.fs" />
+    <Compile Include="Analysis\ArgumentSyntaxNode.fs" />
+    <Compile Include="Analysis\ParameterInfo.fs" />
+    <Compile Include="Analysis\InvocationAnalysis.fs" />
+    <Compile Include="DiagnosticDescriptors.fs" />
     <Compile Include="RequireNamedArgsAnalyzer.fs" />
     <Compile Include="RequireNamedArgsCodeFixProvider.fs" />
   </ItemGroup>
