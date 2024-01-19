@@ -8,9 +8,7 @@
 
   <ItemGroup>
     <Compile Include="Support\TaskBuilder.fs" />
-    <Compile Include="Support\AnalysisResult.fs" />
     <Compile Include="Analysis\ArgumentSyntaxNode.fs" />
-    <Compile Include="Analysis\ArgumentSyntaxNode1.fs" />
     <Compile Include="Analysis\ParameterInfo.fs" />
     <Compile Include="Analysis\InvocationAnalysis.fs" />
     <Compile Include="DiagnosticDescriptors.fs" />

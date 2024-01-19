@@ -22,10 +22,10 @@ module SemanticModelParameterInfoExtensions =
     /// </summary>
     type SemanticModel
         with
-        member sema.GetParameterInfo (methodOrPropertySymbol: ISymbol,
-                                      argumentPosition: int,
-                                      argumentName: NameColonSyntax)
-                                     : ParameterInfo option =
+        member sema.GetParameterInfo(methodOrPropertySymbol: ISymbol,
+                                     argumentPosition: int,
+                                     argumentName: NameColonSyntax)
+                                    : ParameterInfo option =
             let parameterSymbols =
                 match methodOrPropertySymbol with
                 | :? IMethodSymbol as s   -> s.Parameters
@@ -86,8 +86,8 @@ module SemanticModelParameterInfoExtensions =
             match parameterSymbol with
             | None ->
                 // We could not find a parameter with the name matching the argument's name.
-                // Looks like a compile error in the analyzed invocation: it's using a wrong name to name an argument.
-                // We pass up on analyzing this invocation, compiler will emit a diagnostic about it.
+                // Looks like a compile error in the analyzed invocation: it's using a wrong argument name.
+                // We pass up on analyzing this invocation, the compiler will emit a diagnostic about it.
                 None
 
             | Some parameterSymbol ->

@@ -7,7 +7,6 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
 open Microsoft.CodeAnalysis.Diagnostics
 open RequireNamedArgs.Analysis
-open RequireNamedArgs.Support
 
 
 [<DiagnosticAnalyzer(LanguageNames.CSharp)>]
@@ -60,13 +59,13 @@ type public RequireNamedArgsAnalyzer() =
     member private this.DoAnalyze(context: SyntaxNodeAnalysisContext) =
         let invocationAnalysis = InvocationAnalysis.Of(context.SemanticModel, context.Node)
         match invocationAnalysis with
-        | StopAnalysis         ->
+        | StopAnalysis ->
             ()
 
         | OK invocationAnalysis ->
             let argumentWithMissingNames = invocationAnalysis.GetArgumentWithMissingNames()
             match argumentWithMissingNames with
-            | StopAnalysis                ->
+            | StopAnalysis ->
                 ()
 
             | OK argumentWithMissingNames ->

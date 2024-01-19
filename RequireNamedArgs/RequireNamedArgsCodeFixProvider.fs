@@ -6,6 +6,7 @@ open System.Composition
 open System.Threading
 open System.Threading.Tasks
 open Microsoft.CodeAnalysis
+open Microsoft.CodeAnalysis.CSharp.Syntax
 open Microsoft.CodeAnalysis.CodeActions
 open Microsoft.CodeAnalysis.CodeFixes
 open FSharp.Control.Tasks.V2.ContextInsensitive
@@ -21,7 +22,7 @@ type public RequireNamedArgsCodeFixProvider() =
     inherit CodeFixProvider()
 
 
-    static let title = "Use named args"
+    static let Title = "Use named arguments"
 
 
     // This tells the infrastructure that this code-fix provider corresponds to
@@ -36,60 +37,76 @@ type public RequireNamedArgsCodeFixProvider() =
 
     override this.RegisterCodeFixesAsync(context) = (task {
         let! root = context.Document.GetSyntaxRootAsync(context.CancellationToken)
-        let diagnostic = context.Diagnostics |> Seq.head
+        let diagnostic = Seq.head context.Diagnostics
         let diagnosticSpan = diagnostic.Location.SourceSpan
         let syntaxNode = root.FindNode(diagnosticSpan)
 
         // Register a code action that will invoke the fix.
         context.RegisterCodeFix(
             CodeAction.Create(
-                title,
+                Title,
                 createChangedDocument = fun cancellationToken -> task {
-                    return! this.PrefixArgsWithNamesAsync(
+                    return! this.UseNamedArguments(
                         context.Document,
                         root,
                         syntaxNode,
                         cancellationToken)
                 },
-                equivalenceKey = title),
+                equivalenceKey = Title),
             diagnostic)
         return ()
     } :> Task)
 
 
-    member private this.PrefixArgsWithNamesAsync(document: Document,
-                                                 root: SyntaxNode,
-                                                 syntaxNode: SyntaxNode,
-                                                 cancellationToken: CancellationToken)
-                                                 : Task<Document> = task {
+    member private this.UseNamedArguments(document: Document,
+                                          root: SyntaxNode,
+                                          syntaxNode: SyntaxNode,
+                                          ct: CancellationToken)
+                                          : Task<Document> = task {
 
-        let! sema = document.GetSemanticModelAsync(cancellationToken)
-
-        let withNamedArguments (list: IArgumentListSyntax<'T>): Document =
-            let parentSymbol = sema.GetSymbolInfo(list.Parent).Symbol
-
-            let argumentWithNames =
-                list.Arguments
-                |> Seq.mapi (fun at a ->
-                    match sema.GetParameterInfo(parentSymbol, at, a.NameColon) with
-                    | Some pi -> a.WithNameColon(pi.Symbol.Name)
-                    | None    -> a.Syntax)
-
-            let listWithNamedArguments = list.WithArguments(argumentWithNames)
-
-            // An argument list is an "addressable" syntax element, that we can directly
-            // replace in the document's root.
-            document.WithSyntaxRoot(root.ReplaceNode(list.Syntax, listWithNamedArguments.Syntax))
-
-        // As it's the named args code fix provider,
-        // the analyzer has already checked that it's OK to make these args named.
+        // As we're inside of a code fix provider,
+        // the analyzer has already checked that we should and can
+        // make these arguments named.
         match syntaxNode.ArgumentList with
         | None ->
             return document
 
         | Some argumentListSyntaxNode ->
             match argumentListSyntaxNode with
-            | :? ArgumentListSyntaxNode as alsn           -> return withNamedArguments alsn
-            | :? AttributeArgumentListSyntaxNode as aalsn -> return withNamedArguments aalsn
-            | _                                           -> return document
+            | :? IArgumentListSyntax<ArgumentSyntax> as list ->
+                return! this.ReplaceWithNamedArguments(document, root, list, ct)
+
+            | :? IArgumentListSyntax<AttributeArgumentSyntax> as list ->
+                return! this.ReplaceWithNamedArguments(document, root, list, ct)
+
+            | _ ->
+                return document
+    }
+
+
+    member private _.ReplaceWithNamedArguments<'T when 'T :> SyntaxNode>(
+        document: Document,
+        root: SyntaxNode,
+        list: IArgumentListSyntax<'T>,
+        ct: CancellationToken)
+        : Task<Document> = task {
+
+        let! sema = document.GetSemanticModelAsync(ct)
+
+        let parentSymbol = sema.GetSymbolInfo(list.Parent, ct).Symbol
+
+        let argumentWithNames =
+            list.Arguments
+            |> Seq.mapi (fun at a ->
+                match sema.GetParameterInfo(parentSymbol, at, a.NameColon) with
+                | Some pi -> a.WithNameColon(pi.Symbol.Name)
+                              .WithTriviaFrom(a.Syntax)
+                | None    -> a.Syntax)
+
+        let listWithNamedArguments = list.WithArguments(argumentWithNames)
+
+        // An argument list is an "addressable" syntax element, that we can directly
+        // replace in the document's root.
+        return document.WithSyntaxRoot(
+            root.ReplaceNode(list.Syntax, listWithNamedArguments.Syntax))
     }

@@ -3,7 +3,6 @@ namespace RequireNamedArgs.Analysis
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp.Syntax
-open RequireNamedArgs.Support
 open RequireNamedArgs.Analysis.SyntaxNodeArgumentExtensions
 open RequireNamedArgs.Analysis.SemanticModelParameterInfoExtensions
 
@@ -13,8 +12,14 @@ type ArgumentInfo = {
     ParameterSymbol: IParameterSymbol }
 
 
+[<Struct>]
+type AnalysisResult<'T>
+    = StopAnalysis
+    | OK of 'T
+
+
 type InvocationAnalysis private(_sema: SemanticModel,
-                                _exprSyntax: SyntaxNode,
+                                _expressionSyntax: SyntaxNode,
                                 _methodSymbol: IMethodSymbol) =
 
 
@@ -57,7 +62,7 @@ type InvocationAnalysis private(_sema: SemanticModel,
         |> Seq.exists (fun attrData -> attrData.AttributeClass.Name = "RequireNamedArgsAttribute")
 
 
-    static let doesRequireNamedArgs (methodSymbol: IMethodSymbol): bool =
+    static let requiresNamedArgs (methodSymbol: IMethodSymbol): bool =
         if hasRequireNamedArgsAttribute methodSymbol
         then
             // If the method has been marked with the attribute, we're done.
@@ -131,34 +136,33 @@ type InvocationAnalysis private(_sema: SemanticModel,
             StopAnalysis
 
         | OK analyzedMethodSymbol ->
-            if not (isSupported analyzedMethodSymbol &&
-                    doesRequireNamedArgs analyzedMethodSymbol)
+            if isSupported analyzedMethodSymbol &&
+               requiresNamedArgs analyzedMethodSymbol
             then
+                // OK, we're ready to analyze this method invocation/object creation.
+                OK (InvocationAnalysis(sema, analyzedSyntaxNode, analyzedMethodSymbol))
+            else
                 // It is an invocation, but
                 // - we don't supported analyzing invocations of methods of this kind
                 // - or the invoked method doesn't require its arguments to be named.
                 StopAnalysis
-            else
-
-            // OK, we're ready to analyze this method invocation/object creation.
-            OK (InvocationAnalysis(sema, analyzedSyntaxNode, analyzedMethodSymbol))
 
 
     member this.MethodName: string = sprintf "%s.%s"_methodSymbol.ContainingType.Name _methodSymbol.Name
 
 
     /// <summary>
-    /// This method analyzes the invocation/object creation expression _exprSyntax
+    /// This method analyzes the invocation/object creation expression `_expressionSyntax`
     /// to see if any of the arguments supplied to the method/constructor in this expression
     /// are required to be named.
     /// </summary>
     /// <returns>
-    /// Either array of arguments which should be named grouped by their types.
-    /// Or a value `StopAnalysis` which surprisingly means
-    /// we should stop analysis of the current expression.
+    /// Either an array of arguments which should be named, grouped by their types.
+    /// Or `StopAnalysis` which, somewhat surprisingly, means we should
+    /// stop the analysis of current expression.
     /// </returns>
     member this.GetArgumentWithMissingNames(): AnalysisResult<ArgumentInfo[]> =
-        let argumentSyntaxes = _exprSyntax.Arguments
+        let argumentSyntaxes = _expressionSyntax.Arguments
 
         if argumentSyntaxes.Length = 0
         then
