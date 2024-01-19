@@ -4,12 +4,13 @@ namespace RequireNamedArgs.Analysis
 open System
 open System.Collections.Immutable
 open Microsoft.CodeAnalysis
-open RequireNamedArgs.Support
+open Microsoft.CodeAnalysis.CSharp.Syntax
 
 
 type ParameterInfo = {
-    MethodOrPropertySymbol : ISymbol
-    ParamSymbol : IParameterSymbol }
+    // The method or property
+    ParentSymbol: ISymbol
+    Symbol: IParameterSymbol }
 
 
 module SemanticModelParameterInfoExtensions =
@@ -22,9 +23,9 @@ module SemanticModelParameterInfoExtensions =
     type SemanticModel
         with
         member sema.GetParameterInfo (methodOrPropertySymbol: ISymbol,
-                                      argIndex: int,
-                                      argSyntax: ArgumentSyntaxNode)
-                                     : AnalysisResult<ParameterInfo> =
+                                      argumentPosition: int,
+                                      argumentName: NameColonSyntax)
+                                     : ParameterInfo option =
             let parameterSymbols =
                 match methodOrPropertySymbol with
                 | :? IMethodSymbol as s   -> s.Parameters
@@ -38,55 +39,57 @@ module SemanticModelParameterInfoExtensions =
                 // Looks like a compile error in the analyzed invocation:
                 // it passes an argument to a method that doesn't take any.
                 // We pass up on analyzing this invocation, compiler will emit a diagnostic about it.
-                StopAnalysis
+                None
             else
 
-            if isNull argSyntax.NameColon
+            if isNull argumentName
             then
                 //
                 // We found a positional argument.
                 //
-                if argIndex >= 0 && argIndex < parameterSymbols.Length
+                if 0 <= argumentPosition && argumentPosition < parameterSymbols.Length
                 then
-                    OK { MethodOrPropertySymbol = methodOrPropertySymbol;
-                         ParamSymbol = parameterSymbols[argIndex] }
+                    Some { ParentSymbol = methodOrPropertySymbol;
+                           Symbol = parameterSymbols[argumentPosition] }
                 else
 
-                if argIndex >= parameterSymbols.Length &&
+                // Is this argument passed as one of the `params`?
+                if argumentPosition >= parameterSymbols.Length &&
                    parameterSymbols[parameterSymbols.Length - 1].IsParams
                 then
-                    OK { MethodOrPropertySymbol = methodOrPropertySymbol;
-                         ParamSymbol = parameterSymbols[parameterSymbols.Length - 1] }
+                    Some { ParentSymbol = methodOrPropertySymbol;
+                           Symbol = parameterSymbols[parameterSymbols.Length - 1] }
                 else
 
-                StopAnalysis
+                None
             else
 
             //
             // Potentially, we found a named argument.
             //
-            if (isNull argSyntax.NameColon.Name) ||
-               (isNull argSyntax.NameColon.Name.Identifier.ValueText)
+            if (isNull argumentName.Name) ||
+               (isNull argumentName.Name.Identifier.ValueText)
             then
                 // We encountered an argument in the analyzed invocation,
                 // that we don't know how to handle.
                 // Pass up on analyzing this invocation.
                 // (How can `NameColon.Name` or `NameColon.Name.Identifier.ValueText` actually be null?)
-                StopAnalysis
+                None
             else
 
             // Yes, it's a named argument.
-            let paramName = argSyntax.NameColon.Name.Identifier.ValueText
-            let parameterOpt =
+            let parameterName = argumentName.Name.Identifier.ValueText
+            let parameterSymbol =
                 parameterSymbols
-                |> Seq.tryFind (fun param -> String.Equals(param.Name, paramName, StringComparison.Ordinal))
+                |> Seq.tryFind (fun it -> String.Equals(it.Name, parameterName, StringComparison.Ordinal))
 
-            match parameterOpt with
-            | Some parameter ->
-                OK { MethodOrPropertySymbol = methodOrPropertySymbol;
-                     ParamSymbol = parameter }
+            match parameterSymbol with
             | None ->
                 // We could not find a parameter with the name matching the argument's name.
                 // Looks like a compile error in the analyzed invocation: it's using a wrong name to name an argument.
                 // We pass up on analyzing this invocation, compiler will emit a diagnostic about it.
-                StopAnalysis
+                None
+
+            | Some parameterSymbol ->
+                Some { ParentSymbol = methodOrPropertySymbol;
+                       Symbol = parameterSymbol }

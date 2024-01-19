@@ -9,7 +9,7 @@ open RequireNamedArgs.Analysis.SemanticModelParameterInfoExtensions
 
 
 type ArgumentInfo = {
-    Syntax: ArgumentSyntaxNode;
+    Syntax: IArgumentSyntax;
     ParameterSymbol: IParameterSymbol }
 
 
@@ -21,22 +21,22 @@ type InvocationAnalysis private(_sema: SemanticModel,
     static let NoMissingArgumentNames: ArgumentInfo[] = [||]
 
 
-    let getArgumentInfos (argumentSyntaxes: ArgumentSyntaxNode[])
+    let getArgumentInfos (argumentSyntaxes: IArgumentSyntax[])
                          : AnalysisResult<ArgumentInfo[]> =
 
         let parameterInfoResults =
             argumentSyntaxes
-            |> Seq.mapi (fun i syntax -> _sema.GetParameterInfo(_methodSymbol, i, syntax))
+            |> Seq.mapi (fun at a -> _sema.GetParameterInfo(_methodSymbol, at, a.NameColon))
 
-        if parameterInfoResults |> Seq.exists AnalysisResult.isStopAnalysis
+        if parameterInfoResults |> Seq.exists Option.isNone
         then
             StopAnalysis
         else
 
         let argumentInfos =
             parameterInfoResults
-            |> Seq.mapi (fun i (OK parameterInfo) -> { Syntax = argumentSyntaxes[i]
-                                                       ParameterSymbol = parameterInfo.ParamSymbol })
+            |> Seq.mapi (fun i (Some parameterInfo) -> { Syntax = argumentSyntaxes[i]
+                                                         ParameterSymbol = parameterInfo.Symbol })
             |> Array.ofSeq
 
         OK argumentInfos
@@ -166,16 +166,20 @@ type InvocationAnalysis private(_sema: SemanticModel,
         else
 
         let lastArgumentAt = argumentSyntaxes.Length - 1
-        let lastParameterInfo = _sema.GetParameterInfo(_methodSymbol, lastArgumentAt, argumentSyntaxes[lastArgumentAt])
+        let lastArgument = argumentSyntaxes[lastArgumentAt]
+
+        let lastParameterInfo = _sema.GetParameterInfo(_methodSymbol,
+                                                       lastArgumentAt,
+                                                       lastArgument.NameColon)
         match lastParameterInfo with
-        | StopAnalysis ->
+        | None ->
             StopAnalysis
 
-        | OK lastParameterInfo ->
+        | Some lastParameterInfo ->
             // If the last parameter is `params`
             // we don't require named arguments.
             // TODO: Is this limitation still present in C#?
-            if lastParameterInfo.ParamSymbol.IsParams
+            if lastParameterInfo.Symbol.IsParams
             then
                 OK NoMissingArgumentNames
             else

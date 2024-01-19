@@ -13,7 +13,6 @@ open RequireNamedArgs.Analysis
 open RequireNamedArgs.Analyzer
 open RequireNamedArgs.Analysis.SyntaxNodeArgumentExtensions
 open RequireNamedArgs.Analysis.SemanticModelParameterInfoExtensions
-open RequireNamedArgs.Support
 
 
 [<ExportCodeFixProvider(LanguageNames.CSharp, Name = "RequireNamedArgsCodeFixProvider")>]
@@ -61,28 +60,36 @@ type public RequireNamedArgsCodeFixProvider() =
     member private this.PrefixArgsWithNamesAsync(document: Document,
                                                  root: SyntaxNode,
                                                  syntaxNode: SyntaxNode,
-                                                 cancellationToken: CancellationToken) = task {
+                                                 cancellationToken: CancellationToken)
+                                                 : Task<Document> = task {
+
         let! sema = document.GetSemanticModelAsync(cancellationToken)
+
+        let withNamedArguments (list: IArgumentListSyntax<'T>): Document =
+            let parentSymbol = sema.GetSymbolInfo(list.Parent).Symbol
+
+            let argumentWithNames =
+                list.Arguments
+                |> Seq.mapi (fun at a ->
+                    match sema.GetParameterInfo(parentSymbol, at, a.NameColon) with
+                    | Some pi -> a.WithNameColon(pi.Symbol.Name)
+                    | None    -> a.Syntax)
+
+            let listWithNamedArguments = list.WithArguments(argumentWithNames)
+
+            // An argument list is an "addressable" syntax element, that we can directly
+            // replace in the document's root.
+            document.WithSyntaxRoot(root.ReplaceNode(list.Syntax, listWithNamedArguments.Syntax))
 
         // As it's the named args code fix provider,
         // the analyzer has already checked that it's OK to make these args named.
         match syntaxNode.ArgumentList with
-        | Some originalArgumentListSyntax ->
-            let methodOrPropertySymbol = sema.GetSymbolInfo(originalArgumentListSyntax.Parent).Symbol
-
-            let withNameColon (argIndex: int) (argSyntax: ArgumentSyntaxNode) =
-                match sema.GetParameterInfo(methodOrPropertySymbol, argIndex, argSyntax) with
-                | OK paramInfo -> argSyntax.WithNameColon(paramInfo.ParamSymbol.Name)
-                | _ -> argSyntax
-
-            let namedArgumentSyntaxes = originalArgumentListSyntax.Arguments |> Seq.mapi withNameColon
-            let newArgumentListSyntax = originalArgumentListSyntax.WithArguments(namedArgumentSyntaxes)
-
-            // An argument list is an "addressable" syntax element, that we can directly
-            // replace in the document's root.
-            return document.WithSyntaxRoot(
-                root.ReplaceNode(originalArgumentListSyntax.Syntax,
-                                 newArgumentListSyntax.Syntax))
         | None ->
             return document
+
+        | Some argumentListSyntaxNode ->
+            match argumentListSyntaxNode with
+            | :? ArgumentListSyntaxNode as alsn           -> return withNamedArguments alsn
+            | :? AttributeArgumentListSyntaxNode as aalsn -> return withNamedArguments aalsn
+            | _                                           -> return document
     }

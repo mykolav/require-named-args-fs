@@ -6,155 +6,129 @@ open Microsoft.CodeAnalysis.CSharp
 open Microsoft.CodeAnalysis.CSharp.Syntax
 
 
-type ArgumentSyntaxNode =
-    | ArgumentSyntax of ArgumentSyntax
-    | AttributeArgumentSyntax of AttributeArgumentSyntax
-    with
+type IArgumentSyntax =
+    abstract NameColon: NameColonSyntax
 
 
-    static member valueOfArgumentSyntax = function
-        | ArgumentSyntax it          -> Some it
-        | AttributeArgumentSyntax _  -> None
+type IArgumentSyntax<'T when 'T :> SyntaxNode> =
+    inherit IArgumentSyntax
+    abstract Syntax: 'T
+    abstract WithNameColon: (*name*) string -> 'T
 
 
-    static member valueOfAttributeArgumentSyntax = function
-        | ArgumentSyntax _           -> None
-        | AttributeArgumentSyntax it -> Some it
+type ArgumentSyntaxNode(_syntax: ArgumentSyntax) =
+    interface IArgumentSyntax with
+        member _.NameColon: NameColonSyntax = _syntax.NameColon
+
+    interface IArgumentSyntax<ArgumentSyntax> with
+        member _.Syntax = _syntax
+        member _.WithNameColon(name: string): ArgumentSyntax =
+            _syntax.WithNameColon(SyntaxFactory.NameColon(name))
+                   .WithTriviaFrom(_syntax)
 
 
-    member this.NameColon =
-        match this with
-        | ArgumentSyntax argSyntax -> argSyntax.NameColon
-        | AttributeArgumentSyntax attrArgSyntax -> attrArgSyntax.NameColon
+type AttributeArgumentSyntaxNode(_syntax: AttributeArgumentSyntax) =
+    interface IArgumentSyntax with
+        member _.NameColon: NameColonSyntax = _syntax.NameColon
 
 
-    member this.WithNameColon(name: string): ArgumentSyntaxNode =
-        match this with
-        | ArgumentSyntax argSyntax ->
-                ArgumentSyntax (argSyntax.WithNameColon(
-                    SyntaxFactory.NameColon(name))
-                                 // Preserve whitespaces, etc. from the original code.
-                                 .WithTriviaFrom(argSyntax))
-
-        | AttributeArgumentSyntax attrArgSyntax ->
-                AttributeArgumentSyntax (attrArgSyntax.WithNameColon(
-                    SyntaxFactory.NameColon(name))
-                                 // Preserve whitespaces, etc. from the original code.
-                                 .WithTriviaFrom(attrArgSyntax))
+    interface IArgumentSyntax<AttributeArgumentSyntax> with
+        member _.Syntax = _syntax
+        member _.WithNameColon(name: string): AttributeArgumentSyntax =
+            _syntax.WithNameColon(SyntaxFactory.NameColon(name))
+                   .WithTriviaFrom(_syntax)
 
 
-type ArgumentListSyntaxNode =
-    | ArgumentListSyntax of ArgumentListSyntax
-    | AttributeArgumentListSyntax of AttributeArgumentListSyntax
-    with
+type IArgumentListSyntax =
+    abstract Arguments: IArgumentSyntax[]
 
 
-    member this.Syntax
-        with get(): SyntaxNode =
-            match this with
-            | ArgumentListSyntax list -> list
-            | AttributeArgumentListSyntax list -> list
+type IArgumentListSyntax<'T when 'T :> SyntaxNode> =
+    abstract Parent: SyntaxNode
+    abstract Syntax: SyntaxNode
+    abstract Arguments: IArgumentSyntax<'T>[]
+    abstract WithArguments: seq<'T> -> IArgumentListSyntax<'T>
 
 
-    member this.Parent =
-        match this with
-        | ArgumentListSyntax list -> list.Parent
-        | AttributeArgumentListSyntax list -> list.Parent
+type ArgumentListSyntaxNode(_syntax: ArgumentListSyntax) =
+    interface IArgumentListSyntax with
+        member this.Arguments: IArgumentSyntax[] =
+            this.Arguments |> Array.map (fun it -> it :> IArgumentSyntax)
 
 
-    member this.Arguments: ArgumentSyntaxNode[] =
-        match this with
-        | ArgumentListSyntax list -> list.Arguments |> Seq.map(fun it -> ArgumentSyntax it)
-        | AttributeArgumentListSyntax list -> list.Arguments |> Seq.map(fun it -> AttributeArgumentSyntax it)
-        |> Array.ofSeq
+    interface IArgumentListSyntax<ArgumentSyntax> with
+        member this.Parent: SyntaxNode = _syntax.Parent
+        member this.Syntax: SyntaxNode = _syntax
+        member this.Arguments: IArgumentSyntax<ArgumentSyntax>[] = this.Arguments
 
 
-    member this.WithArguments(argumentSyntaxNodes: seq<ArgumentSyntaxNode>)
-                             : ArgumentListSyntaxNode =
-        match this with
-        | ArgumentListSyntax als ->
-            let argumentSyntaxes =
-               argumentSyntaxNodes
-               |> Seq.choose (fun it -> ArgumentSyntaxNode.valueOfArgumentSyntax it)
-               |> Array.ofSeq
-
-            if Array.isEmpty argumentSyntaxes
-            then
-                this
-            else
-
-            ArgumentListSyntax (als.WithArguments(
+        member this.WithArguments(arguments: seq<ArgumentSyntax>): IArgumentListSyntax<ArgumentSyntax> =
+            ArgumentListSyntaxNode (_syntax.WithArguments(
                 SyntaxFactory.SeparatedList(
-                    argumentSyntaxes,
-                    als.Arguments.GetSeparators())))
+                    arguments,
+                    _syntax.Arguments.GetSeparators())))
 
-        | AttributeArgumentListSyntax aals ->
-            let attributeArgumentSyntaxes =
-                argumentSyntaxNodes
-                |> Seq.choose (fun it -> ArgumentSyntaxNode.valueOfAttributeArgumentSyntax it)
-                |> Array.ofSeq
 
-            if Array.isEmpty attributeArgumentSyntaxes
-            then
-                this
-            else
+    member private _.Arguments: IArgumentSyntax<ArgumentSyntax>[] =
+        _syntax.Arguments
+            |> Seq.map (fun it -> ArgumentSyntaxNode(it)
+                                  :> IArgumentSyntax<ArgumentSyntax>)
+            |> Array.ofSeq
 
-            AttributeArgumentListSyntax (aals.WithArguments(
+
+type AttributeArgumentListSyntaxNode(_syntax: AttributeArgumentListSyntax) =
+    interface IArgumentListSyntax with
+        member this.Arguments: IArgumentSyntax[] =
+            this.Arguments |> Array.map (fun it -> it :> IArgumentSyntax)
+
+
+    interface IArgumentListSyntax<AttributeArgumentSyntax> with
+        member this.Parent: SyntaxNode = _syntax.Parent
+        member this.Syntax: SyntaxNode = _syntax
+        member this.Arguments: IArgumentSyntax<AttributeArgumentSyntax>[] =
+            this.Arguments
+
+
+        member this.WithArguments(arguments: seq<AttributeArgumentSyntax>)
+                                 : IArgumentListSyntax<AttributeArgumentSyntax> =
+            AttributeArgumentListSyntaxNode (_syntax.WithArguments(
                 SyntaxFactory.SeparatedList(
-                    attributeArgumentSyntaxes,
-                    aals.Arguments.GetSeparators())))
+                    arguments,
+                    _syntax.Arguments.GetSeparators())))
 
 
-    // member this.WithArguments(argumentSyntaxes: seq<ArgumentSyntax>)
-    //                          : ArgumentListSyntaxNode =
-    //     match this with
-    //     | ArgumentListSyntax als ->
-    //         let argumentSyntaxes =
-    //            argumentSyntaxes
-    //            |> Seq.choose (fun it -> ArgumentSyntaxNode.valueOfArgumentSyntax it)
-    //            |> Array.ofSeq
-    //
-    //         if Array.isEmpty argumentSyntaxes
-    //         then
-    //             this
-    //         else
-    //
-    //         ArgumentListSyntax (als.WithArguments(
-    //             SyntaxFactory.SeparatedList(
-    //                 argumentSyntaxes,
-    //                 als.Arguments.GetSeparators())))
-    //
-    //     | AttributeArgumentListSyntax aals ->
-    //         let attributeArgumentSyntaxes =
-    //             argumentSyntaxes
-    //             |> Seq.choose (fun it -> ArgumentSyntaxNode.valueOfAttributeArgumentSyntax it)
-    //             |> Array.ofSeq
-    //
-    //         if Array.isEmpty attributeArgumentSyntaxes
-    //         then
-    //             this
-    //         else
-    //
-    //         AttributeArgumentListSyntax (aals.WithArguments(
-    //             SyntaxFactory.SeparatedList(
-    //                 attributeArgumentSyntaxes,
-    //                 aals.Arguments.GetSeparators())))
+    member private _.Arguments: IArgumentSyntax<AttributeArgumentSyntax>[] =
+        _syntax.Arguments
+            |> Seq.map (fun it -> AttributeArgumentSyntaxNode(it)
+                                  :> IArgumentSyntax<AttributeArgumentSyntax>)
+            |> Array.ofSeq
 
 
 module SyntaxNodeArgumentExtensions =
 
 
-    type SyntaxNode with
-        member syntaxNode.ArgumentList: ArgumentListSyntaxNode option =
+    type SyntaxNode
+    with
+
+
+        member syntaxNode.ArgumentList: IArgumentListSyntax option =
             match syntaxNode with
-            | :? InvocationExpressionSyntax as it -> Some (ArgumentListSyntax it.ArgumentList)
-            | :? ObjectCreationExpressionSyntax as it -> Some (ArgumentListSyntax  it.ArgumentList)
-            | :? ImplicitObjectCreationExpressionSyntax as it -> Some (ArgumentListSyntax it.ArgumentList)
-            | :? AttributeSyntax as it -> Some (AttributeArgumentListSyntax it.ArgumentList)
+            | :? InvocationExpressionSyntax as it ->
+                Some (ArgumentListSyntaxNode(it.ArgumentList))
+
+            | :? ObjectCreationExpressionSyntax as it ->
+                Some (ArgumentListSyntaxNode(it.ArgumentList))
+
+            | :? ImplicitObjectCreationExpressionSyntax as it ->
+                Some (ArgumentListSyntaxNode(it.ArgumentList))
+
+            | :? AttributeSyntax as it ->
+                Some (AttributeArgumentListSyntaxNode(it.ArgumentList))
+
             | _ -> None
 
 
-        member syntaxNode.Arguments: ArgumentSyntaxNode[] =
+        member syntaxNode.Arguments: IArgumentSyntax[] =
             match syntaxNode.ArgumentList with
             | Some info -> info.Arguments
             | None      -> Array.empty
