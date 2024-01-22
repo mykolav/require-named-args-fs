@@ -26,7 +26,10 @@ skip_commits:
 #---------------------------------#
 
 # Build worker image (VM template)
-image: Visual Studio 2022
+image: Ubuntu2204
+
+install:
+  - sudo apt update && sudo apt install -y dotnet-sdk-8.0
 
 #---------------------------------#
 #       build configuration       #
@@ -37,7 +40,7 @@ configuration: Release
 
 # scripts to run before build
 before_build:
-  - nuget restore
+  - dotnet restore
 
 build:
   project: require-named-args-fs.sln
@@ -46,5 +49,5 @@ build:
 # AppVeyor's Tests Window is empty?
 # See https://stackoverflow.com/a/53309039/818321
 test_script:
-  - nuget install Appveyor.TestLogger -Version 2.0.0
+  - nuget install Appveyor.TestLogger -Version 2.0.0 -Source https://api.nuget.org/v3/index.json
   - dotnet test --no-build --no-restore --test-adapter-path:. --logger:Appveyor ./RequireNamedArgs.Tests/RequireNamedArgs.Tests.fsproj
