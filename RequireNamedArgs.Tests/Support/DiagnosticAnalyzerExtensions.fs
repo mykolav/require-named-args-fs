@@ -7,6 +7,7 @@ open Microsoft.CodeAnalysis.Diagnostics
 open RequireNamedArgs.Tests.Support
 
 
+[<AutoOpen>]
 module DiagnosticAnalyzerExtensions =
 
 

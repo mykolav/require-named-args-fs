@@ -9,9 +9,8 @@ open Microsoft.CodeAnalysis.CodeActions
 open Microsoft.CodeAnalysis.CodeFixes
 open RequireNamedArgs.Analyzer
 open RequireNamedArgs.CodeFixProvider
-open RequireNamedArgs.Tests.Support
-open RequireNamedArgs.Tests.Support.DiagnosticAnalyzerExtensions
 open RequireNamedArgs.Tests.CodeFix.Support
+open RequireNamedArgs.Tests.Support
 open Xunit
 
 
@@ -91,7 +90,7 @@ type CodeFixProviderTests() =
 
     [<Fact>]
     member _.``Invocation of method is fixed to named arguments preserving trivia``() =
-        let originalSnippet = @"
+        let original = @"
             [RequireNamedArgs]
             void Gork(string fileName, int line, int column) {}
             void Bork()
@@ -105,7 +104,7 @@ type CodeFixProviderTests() =
             }
         "
 
-        let expectedFixedSnippet = @"
+        let expected = @"
             [RequireNamedArgs]
             void Gork(string fileName, int line, int column) {}
             void Bork()
@@ -119,98 +118,98 @@ type CodeFixProviderTests() =
             }
         "
 
-        Assert.That(CSharpProgram.FixedFromStatements(originalSnippet))
-              .IsEqualIgnoringWhitespaceTo(CSharpProgram.WithStatements(expectedFixedSnippet))
+        Assert.That(CSharpProgram.FixedFromStatements(original))
+              .IsEqualIgnoringWhitespaceTo(CSharpProgram.WithStatements(expected))
 
 
     [<Fact>]
     member _.``Invocation of method w/ 1st argument named and 2 arguments positional is fixed to named arguments``() =
-        let originalSnippet = @"
+        let original = @"
             [RequireNamedArgs]
             void Gork(string foo, string bar, string baz) {}
             void Bork() { Gork(foo: ""pupper"", ""doggo"", ""woofer""); }
         "
 
-        let expectedFixedSnippet = @"
+        let expected = @"
             [RequireNamedArgs]
             void Gork(string foo, string bar, string baz) {}
             void Bork() { Gork(foo: ""pupper"", bar: ""doggo"", baz: ""woofer""); }
         "
 
-        Assert.That(CSharpProgram.FixedFromStatements(originalSnippet))
-              .IsEqualIgnoringWhitespaceTo(CSharpProgram.WithStatements(expectedFixedSnippet))
+        Assert.That(CSharpProgram.FixedFromStatements(original))
+              .IsEqualIgnoringWhitespaceTo(CSharpProgram.WithStatements(expected))
 
 
     [<Fact>]
     member _.``Invocation of method w/ 2nd argument named and 2 arguments positional is fixed to named arguments``() =
-        let originalSnippet = @"
+        let original = @"
             [RequireNamedArgs]
             void Gork(string foo, string bar, string baz) {}
             void Bork() { Gork(""pupper"", bar: ""doggo"", ""woofer""); }
         "
 
-        let expectedFixedSnippet = @"
+        let expected = @"
             [RequireNamedArgs]
             void Gork(string foo, string bar, string baz) {}
             void Bork() { Gork(foo: ""pupper"", bar: ""doggo"", baz: ""woofer""); }
         "
 
-        Assert.That(CSharpProgram.FixedFromStatements(originalSnippet))
-              .IsEqualIgnoringWhitespaceTo(CSharpProgram.WithStatements(expectedFixedSnippet))
+        Assert.That(CSharpProgram.FixedFromStatements(original))
+              .IsEqualIgnoringWhitespaceTo(CSharpProgram.WithStatements(expected))
 
 
     [<Fact>]
     member _.``Invocation of method w/ 3rd argument named and 2 arguments positional is fixed to named arguments``() =
-        let originalSnippet = @"
+        let original = @"
             [RequireNamedArgs]
             void Gork(string foo, string bar, string baz) {}
             void Bork() { Gork(""pupper"", ""doggo"", baz: ""woofer""); }
         "
 
-        let expectedFixedSnippet = @"
+        let expected = @"
             [RequireNamedArgs]
             void Gork(string foo, string bar, string baz) {}
             void Bork() { Gork(foo: ""pupper"", bar: ""doggo"", baz: ""woofer""); }
         "
 
-        Assert.That(CSharpProgram.FixedFromStatements(originalSnippet))
-              .IsEqualIgnoringWhitespaceTo(CSharpProgram.WithStatements(expectedFixedSnippet))
+        Assert.That(CSharpProgram.FixedFromStatements(original))
+              .IsEqualIgnoringWhitespaceTo(CSharpProgram.WithStatements(expected))
 
 
     [<Fact>]
     member _.``Invocation of static method is fixed to named arguments``() =
-        let originalSnippet = @"
+        let original = @"
             [RequireNamedArgs]
             static void Gork(string fileName, int line, int column) {}
             void Bork() { Gork(""Gizmo.cs"", 9000, 1); }
         "
 
-        let expectedFixedSnippet = @"
+        let expected = @"
             [RequireNamedArgs]
             static void Gork(string fileName, int line, int column) {}
             void Bork() { Gork(fileName: ""Gizmo.cs"", line: 9000, column: 1); }
         "
 
-        Assert.That(CSharpProgram.FixedFromStatements(originalSnippet))
-              .IsEqualIgnoringWhitespaceTo(CSharpProgram.WithStatements(expectedFixedSnippet))
+        Assert.That(CSharpProgram.FixedFromStatements(original))
+              .IsEqualIgnoringWhitespaceTo(CSharpProgram.WithStatements(expected))
 
 
     [<Fact>]
     member _.``Invocation of private static method is fixed to named arguments``() =
-        let originalSnippet = @"
+        let original = @"
             [RequireNamedArgs]
             private static void Gork(string fileName, int line, int column) {}
             void Bork() { Gork(""Gizmo.cs"", 9000, 1); }
         "
 
-        let expectedFixedSnippet = @"
+        let expected = @"
             [RequireNamedArgs]
             private static void Gork(string fileName, int line, int column) {}
             void Bork() { Gork(fileName: ""Gizmo.cs"", line: 9000, column: 1); }
         "
 
-        Assert.That(CSharpProgram.FixedFromStatements(originalSnippet))
-              .IsEqualIgnoringWhitespaceTo(CSharpProgram.WithStatements(expectedFixedSnippet))
+        Assert.That(CSharpProgram.FixedFromStatements(original))
+              .IsEqualIgnoringWhitespaceTo(CSharpProgram.WithStatements(expected))
 
 
     [<Fact>]
@@ -245,45 +244,45 @@ type CodeFixProviderTests() =
 
     [<Fact>]
     member _.``Invocation of constructor is fixed to named arguments``() =
-        let originalSnippet = @"
+        let original = @"
             [RequireNamedArgs]
             public Character(string name, int powerLevel) {}
 
             public static Character Create() => new Character(""Goku"", 5000);
         "
-        let expectedFixedSnippet = @"
+        let expected = @"
             [RequireNamedArgs]
             public Character(string name, int powerLevel) {}
 
             public static Character Create() => new Character(name: ""Goku"", powerLevel: 5000);
         "
 
-        Assert.That(CSharpProgram.FixedFromStatements(originalSnippet))
-              .IsEqualIgnoringWhitespaceTo(CSharpProgram.WithStatements(expectedFixedSnippet))
+        Assert.That(CSharpProgram.FixedFromStatements(original))
+              .IsEqualIgnoringWhitespaceTo(CSharpProgram.WithStatements(expected))
 
 
     [<Fact>]
     member _.``Implicit invocation of constructor is fixed to named arguments``() =
-        let originalSnippet = @"
+        let original = @"
             [RequireNamedArgs]
             public Character(string name, int powerLevel) {}
 
             public static Character Create() => new (""Goku"", 5000);
         "
-        let expectedFixedSnippet = @"
+        let expected = @"
             [RequireNamedArgs]
             public Character(string name, int powerLevel) {}
 
             public static Character Create() => new (name: ""Goku"", powerLevel: 5000);
         "
 
-        Assert.That(CSharpProgram.FixedFromStatements(originalSnippet))
-              .IsEqualIgnoringWhitespaceTo(CSharpProgram.WithStatements(expectedFixedSnippet))
+        Assert.That(CSharpProgram.FixedFromStatements(original))
+              .IsEqualIgnoringWhitespaceTo(CSharpProgram.WithStatements(expected))
 
 
     [<Fact>]
     member _.``Invocation of attribute constructor is fixed to named arguments``() =
-        let originalSnippet = @"
+        let original = @"
             [PowerLevel(""Goku"", 9001)]
             class Goku { }
 
@@ -301,7 +300,7 @@ type CodeFixProviderTests() =
                 }
             }
         "
-        let expectedFixedSnippet = @"
+        let expected = @"
             [PowerLevel(name: ""Goku"", powerLevel: 9001)]
             class Goku { }
 
@@ -320,20 +319,20 @@ type CodeFixProviderTests() =
             }
         "
 
-        Assert.That(CSharpProgram.FixedFromClasses(originalSnippet))
-              .IsEqualIgnoringWhitespaceTo(CSharpProgram.WithClasses(expectedFixedSnippet))
+        Assert.That(CSharpProgram.FixedFromClasses(original))
+              .IsEqualIgnoringWhitespaceTo(CSharpProgram.WithClasses(expected))
 
 
     [<Fact>]
     member _.``Invocation of record primary constructor is fixed to named arguments``() =
-        let originalSnippet = @"
+        let original = @"
             [RequireNamedArgs]
             record CharacterRecord(string Name, int PowerLevel)
             {
                 public static CharacterRecord CreateGoku() => new CharacterRecord(""Goku"", 9001);
             }
         "
-        let expectedFixedSnippet = @"
+        let expected = @"
             [RequireNamedArgs]
             record CharacterRecord(string Name, int PowerLevel)
             {
@@ -341,5 +340,5 @@ type CodeFixProviderTests() =
             }
         "
 
-        Assert.That(CSharpProgram.FixedFromClasses(originalSnippet))
-              .IsEqualIgnoringWhitespaceTo(CSharpProgram.WithClasses(expectedFixedSnippet))
+        Assert.That(CSharpProgram.FixedFromClasses(original))
+              .IsEqualIgnoringWhitespaceTo(CSharpProgram.WithClasses(expected))

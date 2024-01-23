@@ -35,10 +35,6 @@
     </PackageReference>
   </ItemGroup>
 
-  <PropertyGroup>
-    <GenerateProgramFile>false</GenerateProgramFile>
-  </PropertyGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\RequireNamedArgs\RequireNamedArgs.fsproj" />
   </ItemGroup>

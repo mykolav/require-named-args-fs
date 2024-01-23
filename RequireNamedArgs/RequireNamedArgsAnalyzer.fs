@@ -14,12 +14,6 @@ type public RequireNamedArgsAnalyzer() =
     inherit DiagnosticAnalyzer()
 
 
-    let formatDiagnosticMessage (argumentWithMissingNames: seq<ArgumentInfo>): string =
-        let parameterNames = argumentWithMissingNames
-                             |> Seq.map (fun it -> sprintf "'%s'" it.ParameterSymbol.Name)
-        String.Join(", ", parameterNames)
-
-
     override val SupportedDiagnostics =
         ImmutableArray.Create(
             DiagnosticDescriptors.NamedArgumentsRequired,
@@ -65,14 +59,13 @@ type public RequireNamedArgsAnalyzer() =
         | OK invocationAnalysis ->
             let argumentWithMissingNames = invocationAnalysis.GetArgumentWithMissingNames()
             match argumentWithMissingNames with
-            | StopAnalysis ->
+            | StopAnalysis
+            | OK [||]      ->
                 ()
 
             | OK argumentWithMissingNames ->
-                if Array.isEmpty argumentWithMissingNames
-                then
-                    ()
-                else
+                let parameterNames = String.Join(", ", argumentWithMissingNames
+                                                       |> Seq.map (fun it -> "'" + it.ParameterSymbol.Name + "'"))
 
                 // There are arguments that are required to have names.
                 // Emit a corresponding diagnostic.
@@ -82,4 +75,4 @@ type public RequireNamedArgsAnalyzer() =
                         context.Node.GetLocation(),
                         // messageArgs
                         invocationAnalysis.MethodName,
-                        formatDiagnosticMessage argumentWithMissingNames))
+                        parameterNames))

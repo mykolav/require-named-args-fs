@@ -11,9 +11,6 @@ open RequireNamedArgs.Tests.Analysis.Support
 module private Diagnostics =
 
 
-    open RequireNamedArgs.Tests.Support.DiagnosticAnalyzerExtensions
-
-
     let Of(program: string): Diagnostic[] =
         let analyzer = RequireNamedArgsAnalyzer()
         analyzer.Analyze(Document.Language.CSharp, [program])
